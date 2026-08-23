@@ -5,6 +5,8 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { colors } from '../theme/colors';
 import { fetchExercises, categories, Exercise } from '../services/exerciseService';
 import { useRoutineStore } from '../store/routineStore';
+import { useLocaleStore } from '../store/localeStore';
+import { translateInstructions } from '../services/translationService';
 
 function VideoPreview({ uri, thumb }: { uri?: string; thumb?: string }) {
   const isGif = uri?.endsWith('.gif');
@@ -44,6 +46,8 @@ export function ExercisesScreen() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Exercise | null>(null);
   const { favorites, toggleFav, addRoutine } = useRoutineStore();
+  const { locale, setLocale, country, setCountry, load } = useLocaleStore();
+  useEffect(() => { load(); }, []);
 
   useEffect(() => {
     fetchExercises().then((d) => { setExercises(d); setLoading(false); });
@@ -65,8 +69,21 @@ export function ExercisesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.header}>
-        <TextInput value={q} onChangeText={setQ} placeholder="Buscar press banca, sentadilla..." placeholderTextColor="#6B7280" style={styles.search} />
+        <TextInput value={q} onChangeText={setQ} placeholder={locale === 'es' ? "Buscar press banca, sentadilla..." : "Search bench press, squat..."} placeholderTextColor="#6B7280" style={styles.search} />
         <Pressable style={styles.searchBtn}><Ionicons name="search" size={18} color="#fff" /></Pressable>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 8 }}>
+        <Text style={{ color: '#6B7280', fontSize: 11 }}>{country} · {locale === 'es' ? 'Idioma:' : 'Language:'}</Text>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {(['es', 'en'] as const).map((l) => (
+            <Pressable key={l} onPress={() => setLocale(l)} style={[styles.langBtn, locale === l && styles.langActive]}>
+              <Text style={[styles.langTxt, locale === l && { color: '#fff' }]}>{l.toUpperCase()}</Text>
+            </Pressable>
+          ))}
+          <Pressable onPress={() => setCountry(country === 'EC' ? 'US' : country === 'US' ? 'ES' : 'EC')} style={styles.langBtn}>
+            <Text style={styles.langTxt}>{country} 🌐</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
@@ -124,8 +141,8 @@ export function ExercisesScreen() {
                   <Ionicons name="videocam" size={16} color={colors.primary} />
                   <Text style={{ color: '#D1D5DB', fontSize: 12, flex: 1 }}>Vídeo/GIF en loop + imagen HD. Si no carga, revisa conexión. 600+ vídeos offline-ready.</Text>
                 </View>
-                <Text style={{ color: '#fff', fontWeight: '800', marginTop: 16 }}>Cómo se realiza:</Text>
-                {selected.instructions.map((s, i) => (
+                <Text style={{ color: '#fff', fontWeight: '800', marginTop: 16 }}>{locale === 'es' ? 'Cómo se realiza:' : 'How to perform:'}</Text>
+                {translateInstructions(selected.instructions, locale).map((s, i) => (
                   <View key={i} style={styles.step}><View style={styles.stepNum}><Text style={{ color: '#fff', fontWeight: '800' }}>{i + 1}</Text></View><Text style={{ color: '#D1D5DB', flex: 1, fontSize: 13 }}>{s}</Text></View>
                 ))}
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
@@ -149,6 +166,9 @@ const styles = StyleSheet.create({
   chip: { backgroundColor: colors.surface, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.border },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipTxt: { color: '#9CA3AF', fontWeight: '700', fontSize: 12 },
+  langBtn: { backgroundColor: colors.surface2, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.border },
+  langActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  langTxt: { color: '#9CA3AF', fontSize: 11, fontWeight: '800' },
   card: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, marginBottom: 8 },
   img: { width: '100%', height: 120, backgroundColor: colors.surface2 },
   badgeCat: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
