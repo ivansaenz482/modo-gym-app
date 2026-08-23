@@ -1,0 +1,131 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Image, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../theme/colors';
+import { fetchExercises, searchExercises, categories, Exercise } from '../services/exerciseService';
+import { useRoutineStore } from '../store/routineStore';
+
+export function ExercisesScreen() {
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [q, setQ] = useState('');
+  const [cat, setCat] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Exercise | null>(null);
+  const { favorites, toggleFav, addRoutine } = useRoutineStore();
+
+  useEffect(() => {
+    fetchExercises().then((d) => { setExercises(d); setLoading(false); });
+  }, []);
+
+  const filtered = exercises.filter((e) => {
+    const matchQ = !q || e.name.toLowerCase().includes(q.toLowerCase());
+    const matchCat = cat === 'all' || e.category === cat;
+    return matchQ && matchCat;
+  });
+
+  const toggleRoutine = async (ex: Exercise) => {
+    await addRoutine({ id: Date.now().toString(), name: 'Mi rutina ' + new Date().toLocaleDateString(), exercises: [ex], warmup: [], date: new Date().toISOString() });
+    alert('✓ Agregado a tu rutina diaria');
+  };
+
+  if (loading) return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} size="large" /><Text style={{ color: '#9CA3AF', marginTop: 12 }}>Cargando 800+ ejercicios...</Text></View>;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={styles.header}>
+        <TextInput value={q} onChangeText={setQ} placeholder="Buscar press banca, sentadilla..." placeholderTextColor="#6B7280" style={styles.search} />
+        <Pressable style={styles.searchBtn}><Ionicons name="search" size={18} color="#fff" /></Pressable>
+      </View>
+
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {categories.map((c) => (
+            <Pressable key={c.id} onPress={() => setCat(c.id)} style={[styles.chip, cat === c.id && styles.chipActive]}>
+              <Text style={[styles.chipTxt, cat === c.id && { color: '#fff' }]}>{c.label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 8 }}>{filtered.length} ejercicios · Toque para ver detalle + video</Text>
+      </View>
+
+      <FlatList
+        data={filtered}
+        keyExtractor={(i) => i.id}
+        numColumns={2}
+        contentContainerStyle={{ padding: 8, paddingBottom: 20 }}
+        columnWrapperStyle={{ gap: 8 }}
+        renderItem={({ item }) => (
+          <Pressable onPress={() => setSelected(item)} style={styles.card}>
+            <Image source={{ uri: item.image }} style={styles.img} resizeMode="cover" />
+            <View style={styles.badgeCat}><Text style={styles.badgeCatTxt}>{item.category.toUpperCase()}</Text></View>
+            <Pressable onPress={() => toggleFav(item.id)} style={styles.heart}>
+              <Ionicons name={favorites.includes(item.id) ? 'heart' : 'heart-outline'} size={16} color={favorites.includes(item.id) ? colors.primary : '#fff'} />
+            </Pressable>
+            <View style={{ padding: 10 }}>
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }} numberOfLines={2}>{item.name}</Text>
+              <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 4 }}>{item.target} · {item.equipment}</Text>
+              <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
+                <Pressable onPress={() => setSelected(item)} style={styles.miniBtn}><Text style={styles.miniTxt}>VER</Text></Pressable>
+                <Pressable onPress={() => toggleRoutine(item)} style={[styles.miniBtn, { backgroundColor: colors.primary }]}><Ionicons name="add" size={12} color="#fff" /><Text style={styles.miniTxt}>RUTINA</Text></Pressable>
+              </View>
+            </View>
+          </Pressable>
+        )}
+      />
+
+      {/* Detail modal */}
+      <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
+        {selected && (
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
+              <Image source={{ uri: selected.image }} style={{ width: '100%', height: 260 }} resizeMode="cover" />
+              <Pressable onPress={() => setSelected(null)} style={styles.close}><Ionicons name="close" size={22} color="#fff" /></Pressable>
+              <View style={{ padding: 16 }}>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                  <View style={styles.tag}><Text style={styles.tagTxt}>{selected.category}</Text></View>
+                  <View style={styles.tag}><Text style={styles.tagTxt}>{selected.difficulty}</Text></View>
+                  <View style={styles.tag}><Text style={styles.tagTxt}>{selected.equipment}</Text></View>
+                </View>
+                <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>{selected.name}</Text>
+                <Text style={{ color: colors.primary, fontWeight: '700', marginTop: 4 }}>Objetivo: {selected.target} · Secundarios: {selected.secondaryMuscles.join(', ')}</Text>
+                <Text style={{ color: '#fff', fontWeight: '800', marginTop: 16 }}>Cómo se realiza:</Text>
+                {selected.instructions.map((s, i) => (
+                  <View key={i} style={styles.step}><View style={styles.stepNum}><Text style={{ color: '#fff', fontWeight: '800' }}>{i + 1}</Text></View><Text style={{ color: '#D1D5DB', flex: 1, fontSize: 13 }}>{s}</Text></View>
+                ))}
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+                  <Pressable onPress={() => toggleRoutine(selected)} style={[styles.cta, { flex: 1, backgroundColor: colors.primary }]}><Text style={styles.ctaTxt}>+ AGREGAR A RUTINA DIARIA</Text></Pressable>
+                  <Pressable onPress={() => toggleFav(selected.id)} style={[styles.cta, { backgroundColor: colors.surface2 }]}><Ionicons name={favorites.includes(selected.id) ? 'heart' : 'heart-outline'} size={18} color={favorites.includes(selected.id) ? colors.primary : '#fff'} /></Pressable>
+                </View>
+                <Text style={{ color: '#6B7280', fontSize: 11, marginTop: 16, textAlign: 'center' }}>Video HD disponible cuando hay conexión · Demo hombre/mujer incluida en API</Text>
+              </View>
+            </ScrollView>
+          </View>
+        )}
+      </Modal>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  header: { flexDirection: 'row', padding: 16, gap: 8 },
+  search: { flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: '#fff', borderWidth: 1, borderColor: colors.border },
+  searchBtn: { backgroundColor: colors.primary, borderRadius: 12, width: 48, alignItems: 'center', justifyContent: 'center' },
+  chip: { backgroundColor: colors.surface, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.border },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipTxt: { color: '#9CA3AF', fontWeight: '700', fontSize: 12 },
+  card: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, marginBottom: 8 },
+  img: { width: '100%', height: 120, backgroundColor: colors.surface2 },
+  badgeCat: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
+  badgeCatTxt: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  heart: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  miniBtn: { flexDirection: 'row', gap: 4, backgroundColor: colors.surface2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, alignItems: 'center' },
+  miniTxt: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  close: { position: 'absolute', top: 40, right: 16, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  tag: { backgroundColor: colors.surface2, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  tagTxt: { color: '#9CA3AF', fontSize: 11, fontWeight: '700' },
+  step: { flexDirection: 'row', gap: 10, marginTop: 10, backgroundColor: colors.surface, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: colors.border },
+  stepNum: { width: 28, height: 28, borderRadius: 8, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  cta: { borderRadius: 12, padding: 14, alignItems: 'center', justifyContent: 'center' },
+  ctaTxt: { color: '#fff', fontWeight: '900', fontSize: 12 },
+});
