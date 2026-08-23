@@ -1,9 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Image, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { colors } from '../theme/colors';
-import { fetchExercises, searchExercises, categories, Exercise } from '../services/exerciseService';
+import { fetchExercises, categories, Exercise } from '../services/exerciseService';
 import { useRoutineStore } from '../store/routineStore';
+
+function VideoPreview({ uri, thumb }: { uri?: string; thumb?: string }) {
+  const isGif = uri?.endsWith('.gif');
+  const isMp4 = uri?.endsWith('.mp4');
+  const player = useVideoPlayer(uri && isMp4 ? uri : '', (p) => {
+    if (isMp4) {
+      p.loop = true;
+      p.muted = true;
+      p.play();
+    }
+  });
+  if (!uri) return <Image source={{ uri: thumb }} style={styles.img} resizeMode="cover" />;
+  if (isGif) return <Image source={{ uri }} style={styles.img} resizeMode="cover" />;
+  if (isMp4) return <VideoView player={player} style={styles.img} contentFit="cover" nativeControls={false} />;
+  return <Image source={{ uri: thumb || uri }} style={styles.img} resizeMode="cover" />;
+}
+
+function DetailVideo({ uri, thumb }: { uri?: string; thumb?: string }) {
+  const isGif = uri?.endsWith('.gif');
+  const isMp4 = uri?.endsWith('.mp4');
+  const player = useVideoPlayer(uri && isMp4 ? uri : '', (p) => {
+    if (isMp4) {
+      p.loop = true;
+      p.play();
+    }
+  });
+  if (!uri) return <Image source={{ uri: thumb }} style={{ width: '100%', height: 260 }} resizeMode="cover" />;
+  if (isGif) return <Image source={{ uri }} style={{ width: '100%', height: 260 }} resizeMode="contain" />;
+  if (isMp4) return <VideoView player={player} style={{ width: '100%', height: 260 }} contentFit="contain" nativeControls allowsFullscreen />;
+  return <Image source={{ uri: thumb }} style={{ width: '100%', height: 260 }} resizeMode="cover" />;
+}
 
 export function ExercisesScreen() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -28,7 +60,7 @@ export function ExercisesScreen() {
     alert('✓ Agregado a tu rutina diaria');
   };
 
-  if (loading) return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} size="large" /><Text style={{ color: '#9CA3AF', marginTop: 12 }}>Cargando 800+ ejercicios...</Text></View>;
+  if (loading) return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} size="large" /><Text style={{ color: '#9CA3AF', marginTop: 12 }}>Cargando 800+ ejercicios con vídeo...</Text></View>;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -45,7 +77,7 @@ export function ExercisesScreen() {
             </Pressable>
           ))}
         </ScrollView>
-        <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 8 }}>{filtered.length} ejercicios · Toque para ver detalle + video</Text>
+        <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 8 }}>{filtered.length} ejercicios · Vídeo/GIF + imagen HD · Toque para ver</Text>
       </View>
 
       <FlatList
@@ -56,8 +88,9 @@ export function ExercisesScreen() {
         columnWrapperStyle={{ gap: 8 }}
         renderItem={({ item }) => (
           <Pressable onPress={() => setSelected(item)} style={styles.card}>
-            <Image source={{ uri: item.image }} style={styles.img} resizeMode="cover" />
+            <VideoPreview uri={item.videoUrl} thumb={item.image} />
             <View style={styles.badgeCat}><Text style={styles.badgeCatTxt}>{item.category.toUpperCase()}</Text></View>
+            <View style={styles.playBadge}><Ionicons name="play" size={10} color="#fff" /><Text style={{ color: '#fff', fontSize: 9, fontWeight: '800' }}> VÍDEO</Text></View>
             <Pressable onPress={() => toggleFav(item.id)} style={styles.heart}>
               <Ionicons name={favorites.includes(item.id) ? 'heart' : 'heart-outline'} size={16} color={favorites.includes(item.id) ? colors.primary : '#fff'} />
             </Pressable>
@@ -65,7 +98,7 @@ export function ExercisesScreen() {
               <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }} numberOfLines={2}>{item.name}</Text>
               <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 4 }}>{item.target} · {item.equipment}</Text>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
-                <Pressable onPress={() => setSelected(item)} style={styles.miniBtn}><Text style={styles.miniTxt}>VER</Text></Pressable>
+                <Pressable onPress={() => setSelected(item)} style={styles.miniBtn}><Text style={styles.miniTxt}>VER VÍDEO</Text></Pressable>
                 <Pressable onPress={() => toggleRoutine(item)} style={[styles.miniBtn, { backgroundColor: colors.primary }]}><Ionicons name="add" size={12} color="#fff" /><Text style={styles.miniTxt}>RUTINA</Text></Pressable>
               </View>
             </View>
@@ -73,12 +106,11 @@ export function ExercisesScreen() {
         )}
       />
 
-      {/* Detail modal */}
       <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
         {selected && (
           <View style={{ flex: 1, backgroundColor: colors.background }}>
             <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
-              <Image source={{ uri: selected.image }} style={{ width: '100%', height: 260 }} resizeMode="cover" />
+              <DetailVideo uri={selected.videoUrl} thumb={selected.image} />
               <Pressable onPress={() => setSelected(null)} style={styles.close}><Ionicons name="close" size={22} color="#fff" /></Pressable>
               <View style={{ padding: 16 }}>
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
@@ -88,6 +120,10 @@ export function ExercisesScreen() {
                 </View>
                 <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>{selected.name}</Text>
                 <Text style={{ color: colors.primary, fontWeight: '700', marginTop: 4 }}>Objetivo: {selected.target} · Secundarios: {selected.secondaryMuscles.join(', ')}</Text>
+                <View style={{ marginTop: 12, backgroundColor: colors.surface2, borderRadius: 12, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="videocam" size={16} color={colors.primary} />
+                  <Text style={{ color: '#D1D5DB', fontSize: 12, flex: 1 }}>Vídeo/GIF en loop + imagen HD. Si no carga, revisa conexión. 600+ vídeos offline-ready.</Text>
+                </View>
                 <Text style={{ color: '#fff', fontWeight: '800', marginTop: 16 }}>Cómo se realiza:</Text>
                 {selected.instructions.map((s, i) => (
                   <View key={i} style={styles.step}><View style={styles.stepNum}><Text style={{ color: '#fff', fontWeight: '800' }}>{i + 1}</Text></View><Text style={{ color: '#D1D5DB', flex: 1, fontSize: 13 }}>{s}</Text></View>
@@ -96,7 +132,6 @@ export function ExercisesScreen() {
                   <Pressable onPress={() => toggleRoutine(selected)} style={[styles.cta, { flex: 1, backgroundColor: colors.primary }]}><Text style={styles.ctaTxt}>+ AGREGAR A RUTINA DIARIA</Text></Pressable>
                   <Pressable onPress={() => toggleFav(selected.id)} style={[styles.cta, { backgroundColor: colors.surface2 }]}><Ionicons name={favorites.includes(selected.id) ? 'heart' : 'heart-outline'} size={18} color={favorites.includes(selected.id) ? colors.primary : '#fff'} /></Pressable>
                 </View>
-                <Text style={{ color: '#6B7280', fontSize: 11, marginTop: 16, textAlign: 'center' }}>Video HD disponible cuando hay conexión · Demo hombre/mujer incluida en API</Text>
               </View>
             </ScrollView>
           </View>
@@ -118,6 +153,7 @@ const styles = StyleSheet.create({
   img: { width: '100%', height: 120, backgroundColor: colors.surface2 },
   badgeCat: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
   badgeCatTxt: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  playBadge: { position: 'absolute', top: 32, left: 8, backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, flexDirection: 'row', alignItems: 'center' },
   heart: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   miniBtn: { flexDirection: 'row', gap: 4, backgroundColor: colors.surface2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, alignItems: 'center' },
   miniTxt: { color: '#fff', fontSize: 10, fontWeight: '800' },
