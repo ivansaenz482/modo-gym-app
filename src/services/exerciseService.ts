@@ -8,7 +8,7 @@ export type Exercise = {
   target: string;
   secondaryMuscles: string[];
   difficulty: string;
-  category: 'gym' | 'cardio' | 'crossfit' | 'calentamiento';
+  category: 'gym' | 'cardio' | 'calentamiento';
   instructions: string[];
   gifUrl: string;
   image: string;
@@ -135,7 +135,6 @@ export const categories = [
   { id: 'all', label: 'Todos', icon: 'apps' },
   { id: 'gym', label: 'Gym', icon: 'barbell' },
   { id: 'cardio', label: 'Cardio', icon: 'heart' },
-  { id: 'crossfit', label: 'CrossFit', icon: 'flame' },
   { id: 'calentamiento', label: 'Calentamiento', icon: 'sunny' },
 ] as const;
 
