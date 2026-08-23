@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0A0A0F"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.modogym.app"
@@ -24,8 +26,9 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.modogym.app",
-      "permissions": ["NOTIFICATIONS"],
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,6 +36,9 @@
     "extra": {
       "author": "Ing Ivan Teneta"
     },
-    "plugins": []
+    "plugins": [
+      "expo-font",
+      "expo-secure-store"
+    ]
   }
 }

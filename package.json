@@ -16,6 +16,8 @@
     "expo-notifications": "~0.31.5",
     "expo-secure-store": "~14.2.4",
     "expo-status-bar": "~2.2.3",
+    "metro": "^0.82.0",
+    "metro-cache": "^0.82.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.6",
