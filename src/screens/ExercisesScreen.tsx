@@ -45,9 +45,12 @@ export function ExercisesScreen() {
   const [cat, setCat] = useState('all');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Exercise | null>(null);
+  const [selectedMuscle, setSelectedMuscle] = useState('todos');
   const { favorites, toggleFav, addRoutine } = useRoutineStore();
   const { locale, setLocale, country, setCountry, load } = useLocaleStore();
   useEffect(() => { load(); }, []);
+
+  const muscleGroups = ['todos', 'pecho', 'espalda', 'bíceps', 'tríceps', 'piernas', 'hombros', 'abdomen', 'glúteos', 'full body'];
 
   useEffect(() => {
     fetchExercises().then((d) => { setExercises(d); setLoading(false); });
@@ -56,7 +59,9 @@ export function ExercisesScreen() {
   const filtered = exercises.filter((e) => {
     const matchQ = !q || e.name.toLowerCase().includes(q.toLowerCase());
     const matchCat = cat === 'all' || e.category === cat;
-    return matchQ && matchCat;
+    const m = selectedMuscle.toLowerCase();
+    const matchMuscle = m === 'todos' || e.target.includes(m) || e.bodyPart.includes(m) || e.secondaryMuscles.some((s) => s.toLowerCase().includes(m)) || e.name.toLowerCase().includes(m);
+    return matchQ && matchCat && matchMuscle;
   });
 
   const toggleRoutine = async (ex: Exercise) => {
@@ -94,7 +99,14 @@ export function ExercisesScreen() {
             </Pressable>
           ))}
         </ScrollView>
-        <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 8 }}>{filtered.length} ejercicios · Vídeo/GIF + imagen HD · Toque para ver</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 8 }}>
+          {muscleGroups.map((m) => (
+            <Pressable key={m} onPress={() => setSelectedMuscle(m)} style={[styles.chip, selectedMuscle === m && styles.chipActive, selectedMuscle === m && { backgroundColor: '#0EA5E9', borderColor: '#0EA5E9' }]}>
+              <Text style={[styles.chipTxt, selectedMuscle === m && { color: '#fff' }]}>{m.toUpperCase()}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <Text style={{ color: '#6B7280', fontSize: 11, marginTop: 8 }}>{filtered.length} ejercicios · {selectedMuscle !== 'todos' ? `Sección ${selectedMuscle.toUpperCase()} · ` : ''}Vídeo/GIF + imagen HD</Text>
       </View>
 
       <FlatList

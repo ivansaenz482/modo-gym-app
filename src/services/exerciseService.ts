@@ -58,7 +58,7 @@ function slugMatch(name: string, map: Map<string, string>): string | undefined {
 function mapYuhonas(raw: any[], videoMap: Map<string, string>): Exercise[] {
   // pool de gifs para fallback aleatorio pero determinístico
   const pool = Array.from(videoMap.values());
-  return raw.slice(0, 600).map((e: any, idx: number) => {
+  return raw.slice(0, 873).map((e: any, idx: number) => {
     const id: string = e.id;
     const name: string = e.name;
     const img = `${YUHONAS_IMG_BASE}${id}/0.jpg`;

@@ -1,21 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useUserStore } from '../store/userStore';
 import { useMembershipStore, calcExpiryAlert } from '../store/membershipStore';
+import { useProgressStore } from '../store/progressStore';
 import { calculateBMI, bmiCategory } from '../utils/calculations';
 import { generateRoutineRecommendation } from '../services/aiService';
 
 export function HomeScreen({ nav }: { nav: (s: string) => void }) {
-  const { profile } = useUserStore();
+  const { profile, setProfile } = useUserStore();
   const { memberships, load } = useMembershipStore();
-  useEffect(() => { load(); }, []);
+  const { history, load: loadProgress, addEntry, getMessage } = useProgressStore();
+  const [editMode, setEditMode] = useState(false);
+  const [editWeight, setEditWeight] = useState('');
+  const [editHeight, setEditHeight] = useState('');
+  const [editDays, setEditDays] = useState('');
+  useEffect(() => { load(); loadProgress(); }, []);
   if (!profile) return null;
   const bmi = calculateBMI(profile.weight, profile.height);
   const rec = generateRoutineRecommendation(profile.daysPerWeek, profile.goal);
   const alert = memberships[0] ? calcExpiryAlert(memberships[0].endDate) : null;
+  const progressMsg = getMessage();
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
@@ -53,6 +60,40 @@ export function HomeScreen({ nav }: { nav: (s: string) => void }) {
           <Ionicons name="chevron-forward" size={18} color="#6B7280" />
         </Pressable>
       )}
+
+      {/* Progreso semanal */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>📈 Tu Progreso Semanal</Text>
+        <Text style={{ color: '#D1D5DB', fontSize: 12, marginTop: 6 }}>{progressMsg}</Text>
+        {history.length > 0 && (
+          <View style={{ marginTop: 8, gap: 4 }}>
+            {history.slice(-3).map((h: any, i: number) => (
+              <Text key={i} style={{ color: '#9CA3AF', fontSize: 11 }}>{new Date(h.date).toLocaleDateString()} — {h.weight}kg / {h.height}cm {h.daysTrained ? `· ${h.daysTrained} días` : ''}</Text>
+            ))}
+          </View>
+        )}
+        <Pressable onPress={() => { setEditWeight(String(profile.weight)); setEditHeight(String(profile.height)); setEditDays(String(profile.daysPerWeek)); setEditMode(!editMode); }} style={styles.primaryBtn}>
+          <Text style={styles.primaryBtnTxt}>{editMode ? 'CANCELAR' : '✏️ EDITAR PESO / ALTURA / DÍAS'}</Text>
+        </Pressable>
+        {editMode && (
+          <View style={{ marginTop: 12, gap: 8 }}>
+            <TextInput value={editWeight} onChangeText={setEditWeight} placeholder={`${profile.weight} kg`} placeholderTextColor="#6B7280" keyboardType="numeric" style={styles.input} />
+            <TextInput value={editHeight} onChangeText={setEditHeight} placeholder={`${profile.height} cm`} placeholderTextColor="#6B7280" keyboardType="numeric" style={styles.input} />
+            <TextInput value={editDays} onChangeText={setEditDays} placeholder={`${profile.daysPerWeek} días/semana`} placeholderTextColor="#6B7280" keyboardType="numeric" style={styles.input} />
+            <Pressable onPress={async () => {
+              const w = Number(editWeight) || profile.weight;
+              const h = Number(editHeight) || profile.height;
+              const d = Number(editDays) || profile.daysPerWeek;
+              await setProfile({ ...profile, weight: w, height: h, daysPerWeek: d });
+              await addEntry({ date: new Date().toISOString(), weight: w, height: h, daysTrained: d });
+              setEditMode(false);
+              setTimeout(() => Alert.alert('¡Actualizado! 🎉', getMessage()), 300);
+            }} style={[styles.primaryBtn, { backgroundColor: colors.success }]}>
+              <Text style={styles.primaryBtnTxt}>GUARDAR PROGRESO</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
 
       {/* Recomendación IA */}
       <View style={styles.card}>
@@ -117,4 +158,5 @@ const styles = StyleSheet.create({
   primaryBtn: { backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 14 },
   primaryBtnTxt: { color: '#fff', fontWeight: '900', letterSpacing: 0.5 },
   quick: { flex: 1, backgroundColor: colors.surface, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  input: { backgroundColor: colors.surface2, borderRadius: 10, padding: 12, color: '#fff', borderWidth: 1, borderColor: colors.border },
 });

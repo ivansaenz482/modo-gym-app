@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert } from 
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useMembershipStore, nextExpiryDate, calcExpiryAlert, MembershipPlan } from '../store/membershipStore';
+import { scheduleMembershipAlerts } from '../services/notificationService';
 
 export function MembershipScreen() {
   const { memberships, expenses, load, addMembership, addExpense } = useMembershipStore();
@@ -18,8 +19,10 @@ export function MembershipScreen() {
     if (!gym || !price) return Alert.alert('Completa gym y precio');
     const start = new Date();
     const end = nextExpiryDate(start, plan);
-    await addMembership({ id: Date.now().toString(), gymName: gym, plan, startDate: start.toISOString(), endDate: end.toISOString(), price: Number(price), paid: true });
-    Alert.alert('✓ Membresía guardada', `Vence: ${end.toLocaleDateString()}`);
+    const m = { id: Date.now().toString(), gymName: gym, plan, startDate: start.toISOString(), endDate: end.toISOString(), price: Number(price), paid: true };
+    await addMembership(m);
+    await scheduleMembershipAlerts(m);
+    Alert.alert('✓ Membresía guardada', `Vence: ${end.toLocaleDateString()} · Te avisaré a los 7,3,1 días y hoy. ¿Renovar?`);
   };
 
   const addExp = async () => {
