@@ -5,9 +5,9 @@ export type Exercise = {
   name: string;
   bodyPart: string;
   equipment: string;
-  target: string; // original inglés (para búsqueda)
-  targetEs: string; // español para mostrar
-  section: string; // sección principal: pecho, espalda, bíceps, etc.
+  target: string;
+  targetEs: string;
+  section: string;
   secondaryMuscles: string[];
   difficulty: string;
   category: 'gym' | 'cardio' | 'calentamiento';
@@ -55,55 +55,20 @@ function classifySection(primary: string, secondary: string[], name: string): st
 
 const YUHONAS_JSON = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 const YUHONAS_IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
-const ADRIAN_JSON = 'https://raw.githubusercontent.com/adriankadev/exercises-dataset/main/data/exercises.json';
-const ADRIAN_BASE = 'https://raw.githubusercontent.com/adriankadev/exercises-dataset/main/';
 
 let cache: Exercise[] | null = null;
-let adrianMap: Map<string, string> | null = null;
-
-async function loadAdrianMap(): Promise<Map<string, string>> {
-  if (adrianMap) return adrianMap;
-  try {
-    const res = await fetch(ADRIAN_JSON);
-    if (!res.ok) throw new Error('adrian fetch fail');
-    const data: any[] = await res.json();
-    const m = new Map<string, string>();
-    for (const e of data) {
-      const key = String(e.name).toLowerCase().trim();
-      const gif = e.gif_url ? `${ADRIAN_BASE}${e.gif_url}` : null;
-      if (gif) m.set(key, gif);
-    }
-    adrianMap = m;
-    return m;
-  } catch {
-    adrianMap = new Map();
-    return adrianMap;
-  }
-}
-
-function slugMatch(name: string, map: Map<string, string>): string | undefined {
-  const k = name.toLowerCase().trim();
-  if (map.has(k)) return map.get(k);
-  // intento por palabras clave
-  for (const [key, v] of map.entries()) {
-    if (k.includes(key) || key.includes(k)) return v;
-  }
-  // fallback: por target
-  return undefined;
-}
 
 const CALENTAMIENTO_IDS = new Set(['Neck_Circles','Shoulder_Rolls','Arm_Circles','Hip_Circles','Leg_Swings','Jumping_Jacks','High_Knees','Butt_Kicks','90_90_Hamstring','90/90 Hamstring','World_Greatest_Stretch']);
 
-function mapYuhonas(raw: any[], videoMap: Map<string, string>): Exercise[] {
-  const pool = Array.from(videoMap.values());
-  return raw.slice(0, 873).map((e: any, idx: number) => {
+function mapYuhonas(raw: any[]): Exercise[] {
+  return raw.slice(0, 873).map((e: any) => {
     const id: string = e.id;
     const name: string = e.name;
     const primary = (e.primaryMuscles?.[0] || 'general').toLowerCase();
     const secondary: string[] = e.secondaryMuscles || [];
     const img = `${YUHONAS_IMG_BASE}${id}/0.jpg`;
-    const videoFromMap = slugMatch(name, videoMap) || pool[idx % pool.length] || '';
-    const isCalentamiento = e.category === 'stretching' || CALENTAMIENTO_IDS.has(id) || name.toLowerCase().includes('stretch') || name.toLowerCase().includes('hamstring') && name.includes('90/90');
+    const thumb = `${YUHONAS_IMG_BASE}${id}/0.jpg`;
+    const isCalentamiento = e.category === 'stretching' || CALENTAMIENTO_IDS.has(id) || name.toLowerCase().includes('stretch') || (name.toLowerCase().includes('hamstring') && name.includes('90/90'));
     const cat: 'gym'|'cardio'|'calentamiento' = isCalentamiento ? 'calentamiento' : (e.category === 'cardio' ? 'cardio' : 'gym');
     const section = cat === 'calentamiento' ? 'calentamiento' : classifySection(primary, secondary, name);
     return {
@@ -118,10 +83,10 @@ function mapYuhonas(raw: any[], videoMap: Map<string, string>): Exercise[] {
       difficulty: (e.level || 'beginner').toLowerCase(),
       category: cat,
       instructions: e.instructions || [],
-      gifUrl: videoFromMap || img,
+      gifUrl: img,
       image: img,
-      videoUrl: videoFromMap || img,
-      thumbnail: img,
+      videoUrl: img,
+      thumbnail: thumb,
     };
   });
 }
@@ -129,40 +94,12 @@ function mapYuhonas(raw: any[], videoMap: Map<string, string>): Exercise[] {
 export async function fetchExercises(): Promise<Exercise[]> {
   if (cache) return cache;
   try {
-    const [resY, vMap] = await Promise.all([fetch(YUHONAS_JSON), loadAdrianMap()]);
-    if (!resY.ok) throw new Error('yuhonas fail');
-    const data = await resY.json();
-    cache = mapYuhonas(data, vMap);
+    const res = await fetch(YUHONAS_JSON);
+    if (!res.ok) throw new Error('fetch fail');
+    const data = await res.json();
+    cache = mapYuhonas(data);
     return cache;
   } catch {
-    // fallback: intenta solo adrian o mock
-    try {
-      const res = await fetch(ADRIAN_JSON);
-      if (res.ok) {
-        const data: any[] = await res.json();
-        cache = data.slice(0, 300).map((e: any) => {
-          const primary = (e.target || 'general').toLowerCase();
-          return {
-            id: e.id,
-            name: e.name,
-            bodyPart: toSpanishMuscle(e.body_part || e.category || 'general'),
-            equipment: (e.equipment || 'peso corporal').toLowerCase(),
-            target: primary,
-            targetEs: toSpanishMuscle(primary),
-            section: classifySection(primary, e.secondary_muscles || [], e.name),
-            secondaryMuscles: (e.secondary_muscles || []).map(toSpanishMuscle),
-            difficulty: 'intermedio',
-            category: (e.category === 'cardio' ? 'cardio' : 'gym') as any,
-            instructions: e.instruction_steps?.en || [e.instructions?.en || ''].filter(Boolean),
-            gifUrl: e.gif_url ? `${ADRIAN_BASE}${e.gif_url}` : '',
-            image: e.image ? `${ADRIAN_BASE}${e.image}` : '',
-            videoUrl: e.gif_url ? `${ADRIAN_BASE}${e.gif_url}` : '',
-            thumbnail: e.image ? `${ADRIAN_BASE}${e.image}` : '',
-          };
-        });
-        return cache!;
-      }
-    } catch {}
     cache = mockExercises.map((m) => ({
       ...m,
       videoUrl: (m as any).gifUrl || m.image,

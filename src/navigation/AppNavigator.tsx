@@ -11,8 +11,9 @@ import { DietScreen } from '../screens/DietScreen';
 import { AIScreen } from '../screens/AIScreen';
 import { MembershipScreen } from '../screens/MembershipScreen';
 import { RoutinesScreen } from '../screens/RoutinesScreen';
+import { ShareScreen } from '../screens/ShareScreen';
 
-type Tab = 'home' | 'exercises' | 'routines' | 'diet' | 'ai' | 'membership';
+type Tab = 'home' | 'exercises' | 'routines' | 'diet' | 'ai' | 'membership' | 'share';
 
 export function AppNavigator() {
   const { profile, loadProfile } = useUserStore();
@@ -33,6 +34,7 @@ export function AppNavigator() {
     diet: <DietScreen />,
     ai: <AIScreen />,
     membership: <MembershipScreen />,
+    share: <ShareScreen />,
   };
 
   const tabs: { id: Tab; icon: any; label: string }[] = [
@@ -42,6 +44,7 @@ export function AppNavigator() {
     { id: 'diet', icon: 'restaurant', label: 'Dieta' },
     { id: 'ai', icon: 'sparkles', label: 'IA' },
     { id: 'membership', icon: 'card', label: 'Pagos' },
+    { id: 'share', icon: 'qr-code', label: 'QR' },
   ];
 
   return (
