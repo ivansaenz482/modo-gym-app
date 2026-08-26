@@ -6,7 +6,7 @@ import { colors } from '../theme/colors';
 import { fetchExercises, categories, Exercise } from '../services/exerciseService';
 import { useRoutineStore } from '../store/routineStore';
 import { useLocaleStore } from '../store/localeStore';
-import { translateInstructions } from '../services/translationService';
+import { translateInstructions, translateDifficulty, translateEquipment } from '../services/translationService';
 
 function VideoPreview({ uri, thumb }: { uri?: string; thumb?: string }) {
   const isGif = uri?.endsWith('.gif');
@@ -57,10 +57,11 @@ export function ExercisesScreen() {
   }, []);
 
   const filtered = exercises.filter((e) => {
-    const matchQ = !q || e.name.toLowerCase().includes(q.toLowerCase());
+    const matchQ = !q || e.name.toLowerCase().includes(q.toLowerCase()) || (e as any).section?.toLowerCase().includes(q.toLowerCase());
     const matchCat = cat === 'all' || e.category === cat;
     const m = selectedMuscle.toLowerCase();
-    const matchMuscle = m === 'todos' || e.target.includes(m) || e.bodyPart.includes(m) || e.secondaryMuscles.some((s) => s.toLowerCase().includes(m)) || e.name.toLowerCase().includes(m);
+    const section = ((e as any).section || e.targetEs || e.target || '').toLowerCase();
+    const matchMuscle = m === 'todos' || section === m || section.includes(m) || m.includes(section);
     return matchQ && matchCat && matchMuscle;
   });
 
@@ -125,7 +126,7 @@ export function ExercisesScreen() {
             </Pressable>
             <View style={{ padding: 10 }}>
               <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }} numberOfLines={2}>{item.name}</Text>
-              <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 4 }}>{item.target} · {item.equipment}</Text>
+              <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 4 }}>{(item as any).section || (item as any).targetEs || item.target} · {translateEquipment(item.equipment, locale)}</Text>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
                 <Pressable onPress={() => setSelected(item)} style={styles.miniBtn}><Text style={styles.miniTxt}>VER VÍDEO</Text></Pressable>
                 <Pressable onPress={() => toggleRoutine(item)} style={[styles.miniBtn, { backgroundColor: colors.primary }]}><Ionicons name="add" size={12} color="#fff" /><Text style={styles.miniTxt}>RUTINA</Text></Pressable>
@@ -144,11 +145,11 @@ export function ExercisesScreen() {
               <View style={{ padding: 16 }}>
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                   <View style={styles.tag}><Text style={styles.tagTxt}>{selected.category}</Text></View>
-                  <View style={styles.tag}><Text style={styles.tagTxt}>{selected.difficulty}</Text></View>
-                  <View style={styles.tag}><Text style={styles.tagTxt}>{selected.equipment}</Text></View>
+                  <View style={styles.tag}><Text style={styles.tagTxt}>{translateDifficulty(selected.difficulty, locale)}</Text></View>
+                  <View style={styles.tag}><Text style={styles.tagTxt}>{translateEquipment(selected.equipment, locale)}</Text></View>
                 </View>
                 <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>{selected.name}</Text>
-                <Text style={{ color: colors.primary, fontWeight: '700', marginTop: 4 }}>Objetivo: {selected.target} · Secundarios: {selected.secondaryMuscles.join(', ')}</Text>
+                <Text style={{ color: colors.primary, fontWeight: '700', marginTop: 4 }}>{locale === 'es' ? 'Objetivo' : 'Target'}: {(selected as any).targetEs || selected.target} · {locale === 'es' ? 'Secundarios' : 'Secondary'}: {selected.secondaryMuscles.join(', ')}</Text>
                 <View style={{ marginTop: 12, backgroundColor: colors.surface2, borderRadius: 12, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Ionicons name="videocam" size={16} color={colors.primary} />
                   <Text style={{ color: '#D1D5DB', fontSize: 12, flex: 1 }}>Vídeo/GIF en loop + imagen HD. Si no carga, revisa conexión. 600+ vídeos offline-ready.</Text>

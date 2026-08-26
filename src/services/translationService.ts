@@ -91,6 +91,27 @@ const DICT: Record<string, string> = {
   'pectorals': 'pectorales',
   'lats': 'dorsales',
   'traps': 'trapecios',
+  // fix foto 90/90 Hamstring y faltantes
+  'with one leg': 'con una pierna',
+  'extiendeed straight out': 'extendida',
+  'extiendeed': 'extendida',
+  'straight out': 'extendida',
+  'straight into the air': 'hacia arriba',
+  'into the air': 'hacia arriba',
+  'with the other leg, bend the hip and knee to 90 degrees': 'con la otra pierna, flexiona cadera y rodilla a 90 grados',
+  'bend the hip and knee to 90 degrees': 'flexiona cadera y rodilla a 90 grados',
+  'to 90 degrees': 'a 90 grados',
+  'you may brace your leg with your hands if necessary': 'puedes sostener la pierna con las manos si es necesario',
+  'brace your leg with your hands if necessary': 'sostén la pierna con las manos si es necesario',
+  'if necessary': 'si es necesario',
+  'pausing briefly at the top': 'pausa breve arriba',
+  'briefly at the top': 'breve arriba',
+  'return the leg to the starting position': 'vuelve la pierna a la posición inicial',
+  'repeat for 10-20 repetitions, and then switch to the other leg': 'repite 10-20 repeticiones y cambia de pierna',
+  'and then switch to the other leg': 'y cambia de pierna',
+  'switch to the other leg': 'cambia de pierna',
+  'extiende your leg': 'extiende tu pierna',
+  'your leg straight': 'tu pierna extendida',
   // extras comunes yuhonas
   'tip: keep the elbows close to the torso.this will be your starting position': 'tip: mantén codos pegados al torso. Esta es tu posición inicial.',
   'this will be your starting position': 'esta será tu posición inicial',
@@ -99,6 +120,13 @@ const DICT: Record<string, string> = {
   'at a 45-degree angle': 'a 45 grados',
   'upper body off the ground': 'torso del suelo',
   'upper body': 'torso',
+  // etiquetas
+  'beginner': 'principiante',
+  'intermediate': 'intermedio',
+  'advanced': 'avanzado',
+  'expert': 'avanzado',
+  'body only': 'peso corporal',
+  'weight': 'peso',
 };
 
 function simpleTranslate(en: string): string {
@@ -126,4 +154,15 @@ export function translateCategory(cat: string, locale: 'es' | 'en'): string {
   if (locale === 'en') return cat;
   const m: Record<string, string> = { gym: 'Gym', cardio: 'Cardio', calentamiento: 'Calentamiento', pecho: 'Pecho', espalda: 'Espalda', piernas: 'Piernas' };
   return m[cat] ?? cat;
+}
+export function translateDifficulty(d: string, locale: 'es' | 'en'): string {
+  if (locale === 'en') return d;
+  const m: Record<string, string> = { beginner: 'principiante', intermediate: 'intermedio', advanced: 'avanzado', expert: 'avanzado' };
+  return m[d.toLowerCase()] ?? d;
+}
+export function translateEquipment(eq: string, locale: 'es' | 'en'): string {
+  if (locale === 'en') return eq;
+  const m: Record<string, string> = { 'body only': 'peso corporal', 'body weight': 'peso corporal', dumbbell: 'mancuerna', barbell: 'barra', 'incline bench': 'banco inclinado', bench: 'banco', cable: 'polea', kettlebell: 'pesa rusa', machine: 'máquina', 'leverage machine': 'máquina' };
+  const k = eq.toLowerCase().trim();
+  return m[k] ?? eq;
 }

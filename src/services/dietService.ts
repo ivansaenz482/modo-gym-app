@@ -1,7 +1,21 @@
 import { Goal } from '../utils/calculations';
 
-type Meal = { name: string; desc: string; kcal: number; protein: number };
+type Meal = { name: string; desc: string; kcal: number; protein: number; recipe?: string[] };
 type DayPlan = { day: string; meals: Meal[]; totalKcal: number; tip: string };
+
+function R(name: string, desc: string): string[] {
+  if (name.toLowerCase().includes('avena')) return [`Mezcla ${desc.split(',')[0] || 'avena'} con leche`, 'Añade fruta/miel, reposa 2 min', 'Sirve al momento'];
+  if (name.toLowerCase().includes('ensalada') || name.toLowerCase().includes('pollo')) return ['Lava y corta verduras', `Cocina ${name.toLowerCase()} a la plancha 6-7 min`, 'Mezcla con 1 cdta aceite, sal y limón'];
+  if (name.toLowerCase().includes('merluza') || name.toLowerCase().includes('pescado') || name.toLowerCase().includes('salmón')) return ['Sazona pescado con sal/pimienta', 'Plancha 4 min por lado', 'Acompaña con verduras al vapor'];
+  if (name.toLowerCase().includes('lentejas') || name.toLowerCase().includes('garbanzos')) return ['Sofríe cebolla/pimiento 3 min', 'Añade legumbre y agua, hierve 20 min', 'Ajusta sal y sirve'];
+  if (name.toLowerCase().includes('arroz')) return ['Lava arroz', 'Hierve 1:2 con agua 12 min', 'Mezcla con proteína y verduras'];
+  if (name.toLowerCase().includes('pasta')) return ['Hierve pasta 8-9 min al dente', 'Escurre y mezcla con proteína', 'Añade tomate/aceite'];
+  if (name.toLowerCase().includes('yogur')) return ['Sirve yogur en bowl', 'Añade chía/fruta/nueces', 'Mezcla y consume'];
+  if (name.toLowerCase().includes('tortilla') || name.toLowerCase().includes('huevo')) return ['Bate huevos', 'Cocina en sartén antiadherente 3 min', 'Acompaña con ensalada/pan'];
+  if (name.toLowerCase().includes('smoothie') || name.toLowerCase().includes('batido')) return ['Pon todo en licuadora', 'Licúa 30s', 'Sirve frío'];
+  return [`Prepara ${desc}`, 'Cocina con poco aceite y sal moderada', 'Sirve y disfruta'];
+}
+function withRecipe(m: Omit<Meal,'recipe'>): Meal { return { ...m, recipe: R(m.name, m.desc) }; }
 
 const DIETS: Record<Goal, DayPlan[]> = {
   perder_peso: [
@@ -51,6 +65,7 @@ const DIETS: Record<Goal, DayPlan[]> = {
   ],
 };
 
-export function getDietForGoal(goal: Goal) {
-  return DIETS[goal] ?? DIETS.mantener;
+export function getDietForGoal(goal: Goal): DayPlan[] {
+  const raw = (DIETS as any)[goal] ?? DIETS.mantener;
+  return raw.map((d: any) => ({ ...d, meals: d.meals.map((m: any) => m.recipe ? m : withRecipe(m)) }));
 }

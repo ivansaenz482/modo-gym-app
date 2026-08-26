@@ -48,17 +48,24 @@ export function DietScreen() {
           <View style={styles.kcalBadge}><Text style={{ color: '#fff', fontWeight: '900' }}>{day.totalKcal} kcal</Text></View>
         </View>
         <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 6 }}>{day.tip}</Text>
-        {day.meals.map((m, i) => (
-          <View key={i} style={styles.meal}>
-            <Image source={{ uri: mealImgs[m.name] }} style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: colors.surface3 }} />
-            <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={{ color: '#fff', fontWeight: '800' }}>{m.name}</Text>
-              <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 2 }}>{m.desc}</Text>
-              <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 2 }}>📸 Imagen real del plato (TheMealDB)</Text>
+        {day.meals.map((m: any, i: number) => (
+          <View key={i} style={[styles.meal, { flexDirection: 'column', alignItems: 'flex-start' }]}>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', width: '100%' }}>
+              <Image source={{ uri: mealImgs[m.name] }} style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: colors.surface3 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontWeight: '800' }}>{m.name}</Text>
+                <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 2 }}>{m.desc}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: colors.primary, fontWeight: '800' }}>{m.kcal} kcal</Text>
+                <Text style={{ color: '#9CA3AF', fontSize: 10 }}>{m.protein}g prot.</Text>
+              </View>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: colors.primary, fontWeight: '800' }}>{m.kcal} kcal</Text>
-              <Text style={{ color: '#9CA3AF', fontSize: 10 }}>{m.protein}g prot.</Text>
+            <View style={{ marginTop: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: 8, width: '100%' }}>
+              <Text style={{ color: colors.gold, fontSize: 11, fontWeight: '800' }}>👨‍🍳 Receta:</Text>
+              {m.recipe?.map((s: string, idx: number) => (
+                <Text key={idx} style={{ color: '#D1D5DB', fontSize: 11, marginTop: 2 }}>{idx + 1}. {s}</Text>
+              ))}
             </View>
           </View>
         ))}
