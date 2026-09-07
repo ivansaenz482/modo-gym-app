@@ -67,5 +67,10 @@ const DIETS: Record<Goal, DayPlan[]> = {
 
 export function getDietForGoal(goal: Goal): DayPlan[] {
   const raw = (DIETS as any)[goal] ?? DIETS.mantener;
-  return raw.map((d: any) => ({ ...d, meals: d.meals.map((m: any) => m.recipe ? m : withRecipe(m)) }));
+  return raw.map((d: any) => {
+    const meals = d.meals.map((m: any) => m.recipe ? m : withRecipe(m));
+    // El total del día SIEMPRE es la suma exacta de los platos
+    const totalKcal = meals.reduce((s: number, m: any) => s + (m.kcal || 0), 0);
+    return { ...d, meals, totalKcal };
+  });
 }

@@ -25,6 +25,7 @@ type State = {
   addMembership: (m: Membership) => Promise<void>;
   addExpense: (e: Expense) => Promise<void>;
   removeMembership: (id: string) => Promise<void>;
+  renewMembership: (id: string, plan?: MembershipPlan) => Promise<Membership | null>;
   load: () => Promise<void>;
 };
 
@@ -53,6 +54,20 @@ export const useMembershipStore = create<State>((set, get) => ({
     await AsyncStorage.setItem(K_MEM, JSON.stringify(next));
     set({ memberships: next });
   },
+  renewMembership: async (id, plan) => {
+    const mem = get().memberships.find((x) => x.id === id);
+    if (!mem) return null;
+    const nuevoPlan = plan || mem.plan;
+    // Base para calcular el nuevo vencimiento: el vencimiento actual si aun es futuro, o hoy si ya vencio
+    const endActual = new Date(mem.endDate);
+    const base = endActual.getTime() > Date.now() ? endActual : new Date();
+    const nuevoEnd = nextExpiryDate(base, nuevoPlan);
+    const updated: Membership = { ...mem, plan: nuevoPlan, startDate: mem.endDate, endDate: nuevoEnd.toISOString() };
+    const next = get().memberships.map((x) => x.id === id ? updated : x);
+    await AsyncStorage.setItem(K_MEM, JSON.stringify(next));
+    set({ memberships: next });
+    return updated;
+  },
 }));
 
 export function calcExpiryAlert(endDate: string) {
@@ -71,4 +86,16 @@ export function nextExpiryDate(start: Date, plan: MembershipPlan) {
   if (plan === 'mensual') d.setMonth(d.getMonth() + 1);
   if (plan === 'trimestral') d.setMonth(d.getMonth() + 3);
   return d;
+}
+
+// Calcula la fecha de inicio real retrocediendo los días ya usados,
+// y la fecha de vencimiento a partir de ese inicio. Permite registrar
+// membresías ya pagadas antes de instalar la app.
+export function expiryFromUsedDays(plan: MembershipPlan, usedDays: number) {
+  const hoy = new Date();
+  // Fecha en que realmente empezó la membresía
+  const start = new Date(hoy);
+  start.setDate(start.getDate() - usedDays);
+  const end = nextExpiryDate(start, plan);
+  return { startDate: start.toISOString(), endDate: end.toISOString() };
 }

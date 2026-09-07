@@ -7,9 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A0A0F"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -26,8 +26,16 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.modogym.app",
+      "allowBackup": false,
       "permissions": [
         "NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
       ]
     },
     "web": {
@@ -40,7 +48,11 @@
       "expo-font",
       "expo-secure-store",
       "expo-asset",
-      "expo-video"
+      "expo-video",
+      "expo-localization",
+      "expo-notifications",
+      "expo-image-picker",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

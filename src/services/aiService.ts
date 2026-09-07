@@ -23,32 +23,117 @@ Dime tu peso/altura y te calculo calorías exactas.`,
 No necesitas más para empezar.`,
 };
 
-function localAnswer(prompt: string, goal?: string): string {
-  const q = prompt.toLowerCase();
-  if (q.includes('rutina') || q.includes('entrenar') || q.includes('ejercicio') || q.includes('seccion') || q.includes('bicep') || q.includes('pecho')) return KNOWLEDGE.rutina + `\n\nTip secciones: en Ejercicios filtra por músculo (Bíceps, Pecho, Espalda...) y toca el vídeo para ver la ejecución. Luego "+ RUTINA" para guardar y verlo desde Mis Rutinas.`;
-  if (q.includes('dieta') || q.includes('comer') || q.includes('calor') || q.includes('plato') || q.includes('comida') || q.includes('nutricion')) return KNOWLEDGE.dieta + `\n\nEn Dieta verás imágenes reales del plato (TheMealDB) y la dieta se adapta cada semana según tu peso registrado en Inicio > Progreso. Si te estancas, baja 100 kcal o sube proteína.`;
-  if (q.includes('suplemento') || q.includes('creatina') || q.includes('proteina')) return KNOWLEDGE.suplemento;
-  if (q.includes('pago') || q.includes('membresia') || q.includes('renovar') || q.includes('mensualidad') || q.includes('vence')) return `Membresía MODO-GYM: ve a Pagos > Nueva membresía (diaria/mensual/trimestral). Te aviso a los 7, 3, 1 y 0 días antes de vencer por notificación push. Activa notificaciones. ¿Quieres que te recuerde renovar?`;
-  if (q.includes('peso') || q.includes('altura') || q.includes('progreso') || q.includes('medida') || q.includes('bajar') || q.includes('adelgazar')) return `Progreso: en Inicio > Progreso puedes editar peso/altura/días cada semana. Te felicito si bajas o te digo que metas más esfuerzo si te estancas. Registra cada domingo. ¿Cuánto pesas hoy?`;
-  if (q.includes('idioma') || q.includes('ingles') || q.includes('español') || q.includes('pais')) return `Idioma: en Ejercicios arriba cambia ES/EN y el país (EC/US/ES). Se auto-detecta del teléfono y queda guardado. Las descripciones "Cómo se realiza" se traducen al instante.`;
-  if (q.includes('musculo') || q.includes('volumen') || q.includes('hipertrofia')) return `Hipertrofia: 10-20 series por músculo/semana, RIR 1-3, descanso 90s-2min, progresión de cargas. Descanso 7-8h. ¿Cuántos días entrenas?`;
-  if (q.includes('cardio')) return `Cardio: 150 min/semana moderado o 75 intenso. Para grasa: caminar inclinado 30min o bici. Para resistencia: intervalos 30s on/60s off x10.`;
-  if (q.includes('calentamiento')) return `Calentamiento MODO: 3min bici/cinta, 3min movilidad (hombros, cadera, tobillos), 2 series aproximación al 50% del peso. Nunca estires en frío.`;
-  if (q.includes('video') || q.includes('gif') || q.includes('como se hace')) return `Vídeos: cada ejercicio tiene GIF/MP4 en loop + imagen HD. Si no carga, revisa conexión. En Rutinas toca el ejercicio para ver el vídeo a pantalla completa. 800+ vídeos disponibles.`;
-  // fallback contextual por objetivo
-  if (goal === 'perder_peso') return `Objetivo bajar peso: te recomiendo 4 días FullBody/Torso-Pierna + 2 días cardio suave. Déficit moderado, no extremo. ¿Quieres que te arme la rutina semanal?`;
-  if (goal === 'ganar_musculo') return `Objetivo masa muscular: PPL 5 días ideal. Come en superávit limpio y duerme 8h. ¿Te armo tu PPL personalizada?`;
-  return `Soy MODO Coach 🤖❤️🧠 — tu asistente gratuito del gym. Puedo ayudarte con rutinas por secciones, dieta con fotos reales, pagos/renovación, progreso semanal (peso/altura), idioma y vídeos. Pregúntame: "armame rutina 4 días" o "dieta para definir" o "mi membresía vence cuándo?"`;
+export async function createWeeklyRoutineFromAI(profile: any, prompt: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const { fetchExercises } = await import('./exerciseService');
+    const { useRoutineStore } = await import('../store/routineStore');
+    const all = await fetchExercises();
+    const days = profile?.daysPerWeek ?? 4;
+    const goal = profile?.goal ?? 'mantener';
+    const rec = generateRoutineRecommendation(days, goal);
+    // Selecciona 2-3 ejercicios por día según el músculo del día
+    const store = useRoutineStore.getState();
+    for (let i = 0; i < rec.split.length; i++) {
+      const dayNum = i + 1;
+      const sectionHint = rec.split[i].toLowerCase();
+      let picks: any[] = [];
+      if (sectionHint.includes('pecho') || sectionHint.includes('push')) picks = all.filter(e => e.section === 'pecho').slice(0, 2).concat(all.filter(e => e.section === 'hombros').slice(0, 1));
+      else if (sectionHint.includes('espalda') || sectionHint.includes('pull')) picks = all.filter(e => e.section === 'espalda').slice(0, 2).concat(all.filter(e => e.section === 'bíceps').slice(0, 1));
+      else if (sectionHint.includes('pierna') || sectionHint.includes('legs') || sectionHint.includes('lower')) picks = all.filter(e => e.section === 'piernas').slice(0, 2).concat(all.filter(e => e.section === 'glúteos').slice(0, 1));
+      else if (sectionHint.includes('torso') || sectionHint.includes('upper')) picks = all.filter(e => ['pecho','espalda','hombros'].includes(e.section)).slice(0, 3);
+      else picks = all.filter(e => e.section === 'full body').slice(0, 2);
+      if (picks.length === 0) picks = all.slice(i * 3, i * 3 + 3);
+      for (const ex of picks.slice(0, 3)) await store.addExerciseToDay(ex, dayNum);
+    }
+    return { success: true, message: `¡Rutina de ${days} días creada! Cada día con 2-3 ejercicios con vídeo. Ve a Rutinas para verla y ajustarla. ¿Quieres que también te genere la dieta?` };
+  } catch (e) {
+    return { success: false, message: 'No pude crear la rutina automáticamente. Ve a Ejercicios y usa "+ RUTINA" eligiendo el día.' };
+  }
 }
 
-export async function askAI(messages: ChatMessage[], goal?: string): Promise<string> {
-  const last = messages[messages.length - 1]?.content ?? '';
+export async function createWeeklyDietFromAI(profile: any): Promise<string> {
+  const goal = profile?.goal ?? 'mantener';
+  return `Dieta generada para objetivo ${goal} con ${profile?.weight}kg. Ve a Dieta y elige el día — cada plato trae foto real y receta paso a paso, y se adapta cada semana según tu peso. ¿Quieres ajustar calorías?`;
+}
 
-  // 1) Intenta HuggingFace gratuito si hay señal (sin key usa local)
-  // 2) Fallback local inmediato (100% gratis offline)
+export async function addBestExercisesForMuscle(muscle: string, profile?: any): Promise<string> {
   try {
-    // Intento a modelo gratuito opcional - si falla, va a local sin error para usuario
-    // Dejamos local como principal para garantizar gratis sin API key
+    const { fetchExercises } = await import('./exerciseService');
+    const { useRoutineStore } = await import('../store/routineStore');
+    const all = await fetchExercises();
+    const m = muscle.toLowerCase().replace(/\./g, '').trim();
+    const targetMap: Record<string, string> = {
+      biceps: 'bíceps', bíceps: 'bíceps',
+      triceps: 'tríceps', tríceps: 'tríceps',
+      pecho: 'pecho', chest: 'pecho', pectoral: 'pecho',
+      espalda: 'espalda', back: 'espalda',
+      pierna: 'piernas', piernas: 'piernas', femoral: 'piernas', femorales: 'piernas',
+      cuadricep: 'piernas', cuádriceps: 'piernas',
+      hombro: 'hombros', hombros: 'hombros', deltoide: 'hombros', deltoides: 'hombros',
+      abdomen: 'abdomen', abdominal: 'abdomen', core: 'abdomen',
+      glutéo: 'glúteos', gluto: 'glúteos', gluteo: 'glúteos', glúteos: 'glúteos', gluteos: 'glúteos',
+      brazo: 'bíceps', brazos: 'bíceps',
+    };
+    const section = targetMap[m] || (m.includes('gluteo') || m.includes('glúteo') ? 'glúteos' : m);
+    let picks = all.filter((e) => e.section === section);
+    if (picks.length === 0) picks = all.filter((e) => e.target.toLowerCase().includes(m) || e.name.toLowerCase().includes(m));
+    // Ordena por nombre para una selección estable, luego top 5
+    picks = picks.slice().sort((a, b) => a.name.localeCompare(b.name)).slice(0, 5);
+    if (picks.length === 0) return `No encontré ejercicios para ${muscle}. Prueba con biceps, triceps, pecho, espalda, piernas, hombros, abdomen o glúteos.`;
+    const store = useRoutineStore.getState();
+    const extraDayName = `Extra - ${section.charAt(0).toUpperCase() + section.slice(1)}`;
+    let extraDay = store.routines.find((r) => r.name === extraDayName);
+    if (!extraDay) {
+      const maxDay = Math.max(0, ...store.routines.map((r) => r.dayNumber));
+      const dayNum = maxDay + 1;
+      await store.addRoutine({ id: `extra-${section}-${Date.now()}`, name: extraDayName, dayNumber: dayNum, exercises: picks, warmup: [], date: new Date().toISOString() });
+    } else {
+      for (const ex of picks) await store.addExerciseToDay(ex, extraDay.dayNumber);
+    }
+    const names = picks.map((p) => p.name).slice(0, 3).join(', ');
+    return `¡Encontré los mejores para ${muscle}! Añadí ${picks.length} ejercicio(s) a tu rutina "${extraDayName}" (con vídeo): ${names}... Ve a Rutinas > ${extraDayName} para verlos. ¿Quieres más de otro músculo?`;
+  } catch {
+    return `No pude añadir ejercicios de ${muscle}. Ve a Ejercicios, filtra por ${muscle} y usa "+ RUTINA" eligiendo el día.`;
+  }
+}
+
+function localAnswer(prompt: string, goal?: string): string {
+  const q = prompt.toLowerCase();
+  if (q.includes('rutina') || q.includes('entrenar') || q.includes('ejercicio') || q.includes('seccion') || q.includes('bicep') || q.includes('pecho') || q.includes('semana') || q.includes('dias')) {
+    if (q.includes('crea') || q.includes('haz') || q.includes('genera') || q.includes('armame') || q.includes('semana')) {
+      return `Puedo crearte la rutina semanal completa por días con vídeos. Dime: ¿cuántos días entrenas (${goal ? 'tienes ' + goal : '2-6'}) y cuántos ejercicios por día (1-3)? Ej: "hazme rutina 4 días, 3 ejercicios por día".`;
+    }
+    return KNOWLEDGE.rutina + `\n\nTip secciones: en Ejercicios filtra por músculo (Bíceps, Pecho, Espalda...) y toca el vídeo para ver la ejecución. Luego "+ RUTINA" elige el Día. O dime "crea mi rutina semanal" y la armo con vídeos por ti.`;
+  }
+  if (q.includes('dieta') || q.includes('comer') || q.includes('calor') || q.includes('plato') || q.includes('comida') || q.includes('nutricion') || q.includes('receta')) {
+    if (q.includes('crea') || q.includes('genera') || q.includes('dame')) return KNOWLEDGE.dieta + `\n\nEn Dieta verás imágenes reales + receta paso a paso y cada semana se adapta a tu peso. Dime "crea mi dieta semanal" y te la dejo lista.`;
+    return KNOWLEDGE.dieta + `\n\nEn Dieta verás imágenes reales del plato y receta. Se adapta cada semana según tu peso en Inicio > Progreso.`;
+  }
+  if (q.includes('suplemento') || q.includes('creatina') || q.includes('proteina')) return KNOWLEDGE.suplemento;
+  if (q.includes('pago') || q.includes('membresia') || q.includes('renovar') || q.includes('mensualidad') || q.includes('vence')) return `Membresía MODO-GYM: ve a Pagos > Nueva membresía (diaria/mensual/trimestral). Te aviso a los 5 días y recordatorio diario si es diaria. ¿Quieres que te recuerde renovar?`;
+  if (q.includes('peso') || q.includes('altura') || q.includes('progreso') || q.includes('medida') || q.includes('bajar') || q.includes('adelgazar')) return `Progreso: en Inicio > Progreso edita peso/altura/días cada semana. Te felicito si bajas o te digo que metas más esfuerzo. ¿Cuánto pesas hoy?`;
+  if (q.includes('idioma') || q.includes('ingles') || q.includes('español') || q.includes('pais')) return `Idioma: en Ejercicios arriba cambia ES/EN y país (EC/US/ES). Se auto-detecta y queda guardado.`;
+  if (q.includes('musculo') || q.includes('volumen') || q.includes('hipertrofia')) return `Hipertrofia: 10-20 series por músculo/semana, RIR 1-3, descanso 90s-2min, progresión. ¿Cuántos días entrenas?`;
+  if (q.includes('cardio')) return `Cardio: 150 min/semana moderado o 75 intenso. Para grasa: caminar inclinado 30min.`;
+  if (q.includes('calentamiento')) return `Calentamiento: 3min bici/cinta, 3min movilidad, 2 series aproximación 50%.`;
+  if (q.includes('video') || q.includes('gif') || q.includes('como se hace')) return `Vídeos: cada ejercicio tiene GIF en loop + imagen HD con músculos. En Rutinas toca el ejercicio para ver vídeo. 1.300+ vídeos.`;
+  if (goal === 'perder_peso') return `Objetivo bajar peso: 4 días FullBody/Torso-Pierna + 2 días cardio suave. ¿Te creo la rutina semanal por días con vídeos?`;
+  if (goal === 'ganar_musculo') return `Objetivo masa muscular: PPL 5 días ideal. ¿Te armo tu rutina semanal por días con vídeos?`;
+  return `Soy MODO Coach 🤖❤️🧠 — respondo todo de ejercicios (explico cualquier ejercicio), creo tu rutina semanal por días con vídeos y tu dieta con receta. Dime: "crea mi rutina 4 días" o "crea mi dieta".`;
+}
+
+import { askFreeAI } from './freeAIService';
+
+export async function askAI(messages: ChatMessage[], goal?: string, profile?: any): Promise<string> {
+  const last = messages[messages.length - 1]?.content ?? '';
+  const context = profile ? `Usuario: ${profile.name}, ${profile.weight}kg, ${profile.height}cm, ${profile.age || 25} años, objetivo ${goal}, ${profile.daysPerWeek} días/semana, gym ${profile.gymName}` : `Objetivo: ${goal}`;
+  // 1) Intenta IA gratuita online (HF) si hay internet
+  try {
+    const free = await askFreeAI(last, context);
+    if (free && free.length > 20) return free;
+  } catch {}
+  // 2) Fallback local 100% gratis offline
+  try {
     return localAnswer(last, goal);
   } catch {
     return localAnswer(last, goal);

@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Image, TextInput, Alert 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { appFont, statFont } from '../theme/fonts';
 import { useUserStore } from '../store/userStore';
 import { useMembershipStore, calcExpiryAlert } from '../store/membershipStore';
 import { useProgressStore } from '../store/progressStore';
 import { calculateBMI, bmiCategory } from '../utils/calculations';
 import { generateRoutineRecommendation } from '../services/aiService';
+import { MenuButton } from '../components/ui/MenuButton';
 
 export function HomeScreen({ nav }: { nav: (s: string) => void }) {
   const { profile, setProfile } = useUserStore();
@@ -26,22 +28,63 @@ export function HomeScreen({ nav }: { nav: (s: string) => void }) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <LinearGradient colors={[colors.primary, '#FF6B35']} style={styles.hero}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View>
-            <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>HOLA, {profile.name.toUpperCase()} 👋</Text>
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 4 }}>{profile.gymName}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 2 }}>{profile.daysPerWeek} días/semana · Objetivo: {profile.goal.replace('_', ' ')}</Text>
+      {/* Header con logo y fondo impactante */}
+      <View style={[styles.hero, { overflow: 'hidden', padding: 0 }]}>
+        <Image source={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80' }} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['rgba(225,6,0,0.72)', 'rgba(0,0,0,0.75)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 18 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.logoRow}>
+                <Image source={require('../../assets/icon.png')} style={styles.logoImg} />
+                <View>
+              <Text style={[styles.logoTxt, { fontFamily: appFont.black }]}>MODO GYM</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 9, fontWeight: '700', letterSpacing: 0.5, marginTop: 1, fontFamily: appFont.semibold }}>EL PODER ESTÁ EN TU INTERIOR</Text>
+              </View>
+              </View>
+              <Text style={{ color: 'rgba(255,255,255,0.95)', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginTop: 14, fontFamily: appFont.bold }}>HOLA, {profile.name.toUpperCase()} 👋</Text>
+              <Text style={{ color: '#fff', fontSize: 26, fontWeight: '900', marginTop: 2, letterSpacing: 0.3, fontFamily: appFont.black }}>{profile.gymName}</Text>
+              <View style={styles.objRow}>
+                <View style={styles.objDot} />
+                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12 }}>{profile.daysPerWeek} días/semana · Objetivo: {profile.goal.replace('_', ' ')}</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={styles.avatar}><Text style={{ fontSize: 24 }}>🏋️</Text></View>
+              <MenuButton />
+            </View>
           </View>
-          <View style={styles.avatar}><Text style={{ fontSize: 24 }}>🏋️</Text></View>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}><Text numberOfLines={1} style={styles.statVal}>{profile.weight} kg</Text><Text style={styles.statLbl}>PESO</Text></View>
+            <View style={styles.stat}><Text numberOfLines={1} style={styles.statVal}>{profile.height} cm</Text><Text style={styles.statLbl}>ALTURA</Text></View>
+            <View style={styles.stat}><Text numberOfLines={1} style={styles.statVal}>{bmi}</Text><Text style={styles.statLbl}>{bmiCategory(bmi)}</Text></View>
+          </View>
+        </LinearGradient>
+      </View>
+
+      {/* Entrenar - contador de tiempo en gym */}
+      <Pressable onPress={() => nav('workout')} style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+        <View style={styles.trainIcon}><Ionicons name="flame" size={22} color="#fff" /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>🔥 ENTRENAR</Text>
+          <Text style={{ color: '#9CA3AF', fontSize: 11 }}>Cronómetro de tiempo en gym + cardio por tiempo</Text>
         </View>
-        <View style={styles.statsRow}>
-          <View style={styles.stat}><Text style={styles.statVal}>{profile.weight} kg</Text><Text style={styles.statLbl}>PESO</Text></View>
-          <View style={styles.stat}><Text style={styles.statVal}>{profile.height} cm</Text><Text style={styles.statLbl}>ALTURA</Text></View>
-          <View style={styles.stat}><Text style={styles.statVal}>{bmi}</Text><Text style={styles.statLbl}>{bmiCategory(bmi)}</Text></View>
-        </View>
-      </LinearGradient>
+        <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+      </Pressable>
+
+      {/* Modelos gym - API gratuita Unsplash */}
+      <View style={{ marginTop: 16 }}>
+        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginBottom: 8 }}>🔥 Modelos MODO-GYM</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          {[
+            'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=300&q=80',
+            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=300&q=80',
+            'https://images.unsplash.com/photo-1594381898411-58a962c6f3a8?auto=format&fit=crop&w=300&q=80',
+            'https://images.unsplash.com/photo-1534258936925-c58bed479fcb?auto=format&fit=crop&w=300&q=80',
+          ].map((uri, i) => (
+            <Image key={i} source={{ uri }} style={{ width: 140, height: 90, borderRadius: 12 }} />
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Alerta membresía */}
       {memberships[0] ? (
@@ -124,30 +167,37 @@ export function HomeScreen({ nav }: { nav: (s: string) => void }) {
       {/* Accesos rápidos */}
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
         {[
-          { icon: 'restaurant', label: 'Dieta Semanal', sub: 'Personalizada', nav: 'diet' },
-          { icon: 'chatbubbles', label: 'MODO IA', sub: ' Gratis 24/7', nav: 'ai' },
-          { icon: 'barbell', label: 'Mis Rutinas', sub: `${profile.daysPerWeek} días`, nav: 'routines' },
+          { icon: 'restaurant', label: 'Dieta Semanal', sub: 'Personalizada', nav: 'diet', color: '#10B981' },
+          { icon: 'sparkles', label: 'MODO IA', sub: 'Gratis 24/7', nav: 'ai', color: '#8B5CF6' },
+          { icon: 'barbell', label: 'Mis Rutinas', sub: `${profile.daysPerWeek} días`, nav: 'routines', color: '#0EA5E9' },
         ].map((c) => (
-          <Pressable key={c.label} onPress={() => nav(c.nav)} style={styles.quick}>
-            <Ionicons name={c.icon as any} size={22} color={colors.primary} />
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{c.label}</Text>
+          <Pressable key={c.label} onPress={() => nav(c.nav)} style={({ pressed }) => [styles.quick, pressed && { transform: [{ scale: 0.98 }] }]}>
+            <View style={[styles.quickIcon, { backgroundColor: c.color }]}>
+              <Ionicons name={c.icon as any} size={20} color="#fff" />
+            </View>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12, marginTop: 10, textAlign: 'center' }}>{c.label}</Text>
             <Text style={{ color: '#9CA3AF', fontSize: 10 }}>{c.sub}</Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={{ color: '#6B7280', fontSize: 11, textAlign: 'center', marginTop: 24 }}>Creado por Ing. Ivan Teneta · MODO-GYM</Text>
+      <Text style={{ color: '#6B7280', fontSize: 11, textAlign: 'center', marginTop: 24 }}>MODO-GYM · El poder está en tu interior</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   hero: { borderRadius: 20, padding: 18 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoImg: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.6)' },
+  logoTxt: { color: '#fff', fontSize: 15, fontWeight: '900', letterSpacing: 1.5 },
+  objRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+  objDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD60A' },
   avatar: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   statsRow: { flexDirection: 'row', gap: 12, marginTop: 18 },
-  stat: { flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', borderRadius: 14, padding: 12, alignItems: 'center' },
-  statVal: { color: '#fff', fontWeight: '900', fontSize: 16 },
-  statLbl: { color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: '700', letterSpacing: 0.5, marginTop: 2 },
+  stat: { flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center' },
+  statVal: { color: '#fff', fontSize: 24, fontFamily: statFont.bold, letterSpacing: 0 },
+  statLbl: { color: 'rgba(255,255,255,0.8)', fontSize: 9, fontWeight: '700', letterSpacing: 0.5, marginTop: 2, fontFamily: appFont.bold },
   alertCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginTop: 14, borderWidth: 1, borderColor: colors.border },
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginTop: 14, borderWidth: 1, borderColor: colors.border },
   cardTitle: { color: '#fff', fontWeight: '800', fontSize: 14 },
@@ -158,5 +208,6 @@ const styles = StyleSheet.create({
   primaryBtn: { backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 14 },
   primaryBtnTxt: { color: '#fff', fontWeight: '900', letterSpacing: 0.5 },
   quick: { flex: 1, backgroundColor: colors.surface, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  input: { backgroundColor: colors.surface2, borderRadius: 10, padding: 12, color: '#fff', borderWidth: 1, borderColor: colors.border },
+  quickIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },  input: { backgroundColor: colors.surface2, borderRadius: 10, padding: 12, color: '#fff', borderWidth: 1, borderColor: colors.border },
+  trainIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
 });

@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-nati
 import { colors } from '../theme/colors';
 import { useUserStore } from '../store/userStore';
 import { getDietForGoal } from '../services/dietService';
-import { getMealImage, adjustCaloriesForProgress } from '../services/nutritionService';
+import { getMealImage } from '../services/nutritionService';
 import { useProgressStore } from '../store/progressStore';
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 
 export function DietScreen() {
   const { profile } = useUserStore();
@@ -22,16 +23,13 @@ export function DietScreen() {
       setMealImgs(imgs);
     })();
   }, [dayIdx, goal]);
-  const diet = dietRaw.map((d) => ({ ...d, totalKcal: adjustCaloriesForProgress(d.totalKcal, history, goal) }));
+  // El total del día SIEMPRE es la suma exacta de los platos mostrados
+  const diet = dietRaw.map((d) => ({ ...d, totalKcal: d.meals.reduce((s, m) => s + (m.kcal || 0), 0) }));
   const day = diet[dayIdx];
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
-      <View style={styles.hero}>
-        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 18 }}>🥗 Dieta Semanal Variada</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 4 }}>Objetivo: {goal.replace('_', ' ').toUpperCase()} · {profile?.weight}kg · {profile?.height}cm</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 6 }}>Cambia de objetivo en perfil para recalcular calorías. Dieta orientativa, consulta nutricionista.</Text>
-      </View>
+      <ScreenHeader icon="restaurant" title="Dieta Semanal" subtitle={`Objetivo: ${goal.replace('_', ' ').toUpperCase()} · ${profile?.weight}kg · Consulta nutriólogo`} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 12 }}>
         {diet.map((d, i) => (
@@ -84,7 +82,6 @@ export function DietScreen() {
   );
 }
 const styles = StyleSheet.create({
-  hero: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
   dayChip: { backgroundColor: colors.surface, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.border, minWidth: 64 },
   dayActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   dayTxt: { color: '#9CA3AF', fontWeight: '900', fontSize: 12 },

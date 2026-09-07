@@ -5,7 +5,7 @@ import { Goal } from '../utils/calculations';
 export type UserProfile = {
   name: string;
   age: number;
-  sex: 'M' | 'F';
+  sex: 'M' | 'F' | 'O';
   height: number; // cm
   weight: number; // kg
   goal: Goal;

@@ -1,31 +1,29 @@
-﻿# MODO-GYM - APK para Drive
+﻿MODO-GYM - APKs y AAB listos - Ing Ivan Teneta
 
-## Como instalar en tu telefono AHORA (sin esperar APK):
+UBICACION: apk-para-drive/
 
-### Opcion 1 - Expo Go (ya funciona, SDK 54):
-1. Actualiza Expo Go en Play Store
-2. Ejecuta: npx expo start --tunnel -c
-3. Escanea QR
+ARCHIVOS GENERADOS (ruta corta C:\modo-gym tambien):
+- modo-gym-debug.apk (155 MB) - para probar rapido, incluye todo, debug signed
+- modo-gym-release.apk (83 MB) - optimizado release, mas liviano, debug signed
+- modo-gym-release.aab (56 MB) - PARA PLAY STORE (Android App Bundle)
 
-### Opcion 2 - APK (esta carpeta):
+TODOS CON VIDEOS: 600+ ejercicios con GIF animado + imagen HD (expo-video)
 
-**APK Debug listo para Drive:** pk-para-drive/modo-gym-debug.apk (se genera con el .bat)
+COMO PROBAR EN TU TELEFONO (Drive):
+1. Sube a Drive el APK que quieras (recomendado release 83MB)
+2. En el celular abre Drive > toca APK > Descargar
+3. Activa "Instalar apps desconocidas" y abre
+4. Prueba: Onboarding > Home > Ejercicios (ver VIDEO en loop) > Rutinas > Dieta > IA > Pagos
 
-**Para generarla:**
-1. Asegurate que el proyecto corto existe en C:\modo-gym (ya copiado)
-2. Doble click en pk-para-drive\generar-apk.bat o ejecuta en PowerShell:
-   cd C:\modo-gym
-   .\android\gradlew.bat assembleDebug
-3. La APK queda en C:\modo-gym\android\app\build\outputs\apk\debug\app-debug.apk
-4. Copiala a esta carpeta y subela a Drive. En el celular activa "Instalar apps desconocidas" y abre el APK.
+PLAY STORE:
+- Sube el AAB: modo-gym-release.aab a Play Console > Produccion
+- Paquete: com.modogym.app (app.json)
+- Version: 1.0.0 - SDK 54
+- Para firma definitiva usa: eas build --platform android --profile production (firma con keystore de EAS)
 
-**Alternativa nube (mas rapido, no compila local):**
-   cd C:\modo-gym
-   eas login
-   eas build --platform android --profile preview
-Te da link directo para instalar.
+REGENERAR:
+cd C:\modo-gym
+.\android\gradlew.bat assembleDebug    -> debug
+.\android\gradlew.bat assembleRelease  -> release APK
+.\android\gradlew.bat bundleRelease    -> AAB
 
-## Videos:
-Ya integrados: 600+ ejercicios con GIF animado + imagen HD (yuhonas + adriankadev). Cada card muestra VIDEO en loop y detalle con player. Si quieres MP4 exacto por ejercicio, se puede cambiar base a free-exercise-db-with-videos cuando R2 este disponible.
-
-Creado por Ing Ivan Teneta

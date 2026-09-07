@@ -5,11 +5,12 @@ import { colors } from '../theme/colors';
 import { useUserStore } from '../store/userStore';
 import { calculateBMI, bmiCategory, Goal } from '../utils/calculations';
 import { Logo } from '../components/ui/Logo';
+import { SelectField } from '../components/ui/SelectField';
 
 export function OnboardingScreen({ onDone }: { onDone: () => void }) {
   const [name, setName] = useState('');
   const [age, setAge] = useState('24');
-  const [sex, setSex] = useState<'M' | 'F'>('M');
+  const [sex, setSex] = useState<'M' | 'F' | 'O'>('M');
   const [height, setHeight] = useState('175');
   const [weight, setWeight] = useState('75');
   const [goal, setGoal] = useState<Goal>('ganar_musculo');
@@ -46,21 +47,23 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
 
         <View style={styles.card}>
           <Text style={styles.label}>NOMBRE</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="Ivan Teneta" placeholderTextColor="#6B7280" style={styles.input} />
+          <TextInput value={name} onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#6B7280" style={styles.input} />
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.label}>EDAD</Text>
               <TextInput value={age} onChangeText={setAge} keyboardType="numeric" style={styles.input} />
             </View>
             <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={styles.label}>SEXO</Text>
-              <View style={styles.sexRow}>
-                {(['M', 'F'] as const).map((s) => (
-                  <Pressable key={s} onPress={() => setSex(s)} style={[styles.sexBtn, sex === s && styles.sexActive]}>
-                    <Text style={[styles.sexTxt, sex === s && { color: '#fff' }]}>{s === 'M' ? 'Hombre' : 'Mujer'}</Text>
-                  </Pressable>
-                ))}
-              </View>
+              <SelectField
+                label="SEXO"
+                value={sex}
+                onChange={(v) => setSex(v as any)}
+                options={[
+                  { value: 'M', label: 'Hombre', emoji: '👨' },
+                  { value: 'F', label: 'Mujer', emoji: '👩' },
+                  { value: 'O', label: 'Prefiero no decir', emoji: '🌈' },
+                ]}
+              />
             </View>
           </View>
 
@@ -109,7 +112,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
               <Text style={styles.ctaTxt}>COMENZAR MI TRANSFORMACIÓN →</Text>
             </LinearGradient>
           </Pressable>
-          <Text style={styles.footer}>Creado por Ing. Ivan Teneta · MODO-GYM © 2026</Text>
+          <Text style={styles.footer}>MODO-GYM · El poder está en tu interior</Text>
         </View>
       </ScrollView>
     </LinearGradient>
