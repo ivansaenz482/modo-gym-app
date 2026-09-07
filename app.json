@@ -28,7 +28,8 @@
       "package": "com.modogym.app",
       "allowBackup": false,
       "permissions": [
-        "NOTIFICATIONS"
+        "android.permission.NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
@@ -42,7 +43,10 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "author": "Ing Ivan Teneta"
+      "author": "Ing Ivan Teneta",
+      "eas": {
+        "projectId": "b50fe005-7805-431b-8646-8a4775ea2b38"
+      }
     },
     "plugins": [
       "expo-font",
