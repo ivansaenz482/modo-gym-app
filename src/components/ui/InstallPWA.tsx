@@ -12,6 +12,7 @@ export function InstallPWA() {
   const [visible, setVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
+  const [inApp, setInApp] = useState(false);
   const [deferred, setDeferred] = useState<any>(null);
 
   useEffect(() => {
@@ -31,8 +32,10 @@ export function InstallPWA() {
     const ua = nav.userAgent || '';
     const ios = /iPad|iPhone|iPod/.test(ua) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1);
     const safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+    const webview = /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|BytedanceWebview|musical_ly|Twitter|Line\/|GSA\//.test(ua);
     setIsIOS(ios);
     setIsSafari(safari);
+    setInApp(webview);
 
     // Android/desktop: prompt nativo
     const onPrompt = (e: any) => {
@@ -69,10 +72,14 @@ export function InstallPWA() {
   };
 
   const message = isIOS
-    ? (isSafari
-        ? 'Toca Compartir (□↑) y luego "Añadir a pantalla de inicio".'
-        : 'Para instalar, abrí esta página en Safari y usa "Añadir a pantalla de inicio".')
-    : 'Añádela a tu pantalla de inicio para usarla como app.';
+    ? (inApp
+        ? 'Estás dentro de otra app (WhatsApp/Instagram). Toca ⋯ o ↧ arriba → "Abrir en Safari", luego Añadir a pantalla de inicio.'
+        : isSafari
+          ? 'Toca Compartir (□↑) y luego "Añadir a pantalla de inicio".'
+          : 'Para instalar, abrí esta página en Safari y usá "Añadir a pantalla de inicio".')
+    : (inApp
+        ? 'Estás dentro de otra app. Abrí esta página en Chrome para instalarla.'
+        : 'Añádela a tu pantalla de inicio para usarla como app.');
 
   return (
     <View style={styles.wrap}>
