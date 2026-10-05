@@ -46,7 +46,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build:web": "expo export -p web && node scripts/pwa-postbuild.mjs"
+    "build:web": "expo export -p web && node scripts/pwa-postbuild.mjs",
+    "release": "powershell -ExecutionPolicy Bypass -File release.ps1"
   },
   "private": true
 }
