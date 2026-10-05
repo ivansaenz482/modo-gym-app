@@ -16,7 +16,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.modogym.app"
+      "bundleIdentifier": "com.modogym.app",
+      "infoPlist": {
+        "NSMotionUsageDescription": "MODO GYM usa el movimiento y los sensores para contar tus pasos y repeticiones."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +32,8 @@
       "allowBackup": false,
       "permissions": [
         "android.permission.NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACTIVITY_RECOGNITION"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",

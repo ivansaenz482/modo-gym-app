@@ -17,6 +17,7 @@ import { classifyWeightCategory, recomendarPesoInicial, sugerirProgresion, mensa
 import { gymLevelLabel } from '../utils/calculations';
 import { RestTimer } from '../components/ui/RestTimer';
 import { RegisterExerciseModal } from '../components/ui/RegisterExerciseModal';
+import { RepCounterModal } from '../components/ui/RepCounterModal';
 import { useProgressStore } from '../store/progressStore';
 
 function RoutineVideo({ ex }: { ex: Exercise }) {
@@ -36,6 +37,7 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
   const logBodyParts = useProgressStore((s) => s.logBodyParts);
   const [selectedEx, setSelectedEx] = useState<Exercise | null>(null);
   const [registerEx, setRegisterEx] = useState<Exercise | null>(null);
+  const [counterEx, setCounterEx] = useState<Exercise | null>(null);
   useEffect(() => { load(); useWeightStore.getState().load(); }, []);
 
   const registrarSesion = async (r: { dayNumber: number; exercises: Exercise[] }) => {
@@ -154,6 +156,10 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
                   <Ionicons name="checkmark-done" size={16} color="#fff" />
                   <Text style={styles.registerTxt}>REGISTRAR ESTE EJERCICIO · SUMAR CALORÍAS</Text>
                 </Pressable>
+                <Pressable onPress={() => setCounterEx(selectedEx)} style={[styles.registerBtn, { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.primary }]}>
+                  <Ionicons name="repeat" size={16} color={colors.primary} />
+                  <Text style={[styles.registerTxt, { color: colors.primary }]}>CONTAR REPETICIONES</Text>
+                </Pressable>
                 {selectedEx.instructions?.length > 0 && (
                   <>
                     <Text style={{ color: '#fff', fontWeight: '800', marginTop: 16 }}>{locale === 'es' ? 'Cómo se realiza:' : 'How to perform:'}</Text>
@@ -169,6 +175,7 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
       </Modal>
 
       <RegisterExerciseModal exercise={registerEx} visible={!!registerEx} onClose={() => setRegisterEx(null)} />
+      <RepCounterModal exercise={counterEx} visible={!!counterEx} onClose={() => setCounterEx(null)} />
     </ScrollView>
   );
 }

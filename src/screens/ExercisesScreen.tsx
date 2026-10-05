@@ -10,6 +10,7 @@ import { translateInstructions, translateDifficulty, translateEquipment } from '
 import { MenuButton } from '../components/ui/MenuButton';
 import { RestTimer } from '../components/ui/RestTimer';
 import { RegisterExerciseModal } from '../components/ui/RegisterExerciseModal';
+import { RepCounterModal } from '../components/ui/RepCounterModal';
 
 function VideoPreview({ uri, thumb }: { uri?: string; thumb?: string }) {
   const isGif = uri?.endsWith('.gif');
@@ -51,6 +52,7 @@ export function ExercisesScreen() {
   const [selectedMuscle, setSelectedMuscle] = useState('todos');
   const [pendingEx, setPendingEx] = useState<Exercise | null>(null);
   const [registerEx, setRegisterEx] = useState<Exercise | null>(null);
+  const [counterEx, setCounterEx] = useState<Exercise | null>(null);
   const { favorites, toggleFav, addExerciseToDay } = useRoutineStore();
   const { locale, setLocale, country, setCountry, load } = useLocaleStore();
   const { profile } = require('../store/userStore').useUserStore();
@@ -178,6 +180,12 @@ export function ExercisesScreen() {
                     <Text style={styles.ctaTxt}>REGISTRAR EJERCICIO · SUMAR CALORÍAS</Text>
                   </View>
                 </Pressable>
+                <Pressable onPress={() => setCounterEx(selected)} style={[styles.cta, { backgroundColor: colors.surface2, marginTop: 10, borderWidth: 1, borderColor: colors.primary }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="repeat" size={16} color={colors.primary} />
+                    <Text style={[styles.ctaTxt, { color: colors.primary }]}>CONTAR REPETICIONES</Text>
+                  </View>
+                </Pressable>
               </View>
             </ScrollView>
           </View>
@@ -203,6 +211,7 @@ export function ExercisesScreen() {
       </Modal>
 
       <RegisterExerciseModal exercise={registerEx} visible={!!registerEx} onClose={() => setRegisterEx(null)} />
+      <RepCounterModal exercise={counterEx} visible={!!counterEx} onClose={() => setCounterEx(null)} />
     </View>
   );
 }

@@ -23,6 +23,7 @@
     "expo-localization": "~17.0.9",
     "expo-notifications": "~0.32.17",
     "expo-secure-store": "~15.0.8",
+    "expo-sensors": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "expo-video": "~3.0.16",
     "firebase": "^10.13.1",

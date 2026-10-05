@@ -172,6 +172,16 @@ export function getSuggestedDurationMin(ex: Exercise): number {
   return ex.suggestedDurationMin ?? 20;
 }
 
+// Series y repeticiones recomendadas según el tipo de ejercicio
+export function suggestedSetsReps(ex: Exercise): { sets: number; reps: string; rest: number; timed: boolean } {
+  if (isTimedExercise(ex)) return { sets: 1, reps: 'por tiempo', rest: 0, timed: true };
+  const n = ex.name.toLowerCase();
+  if (/press|squat|deadlift|row|pull|push|lunge|hip thrust|dip|clean|snatch|overhead/.test(n)) {
+    return { sets: 4, reps: '8-10', rest: getRestSeconds(ex) || 120, timed: false };
+  }
+  return { sets: 3, reps: '12-15', rest: getRestSeconds(ex) || 60, timed: false };
+}
+
 export async function searchExercises(q: string, filter?: { category?: string; bodyPart?: string }) {
   const all = await fetchExercises();
   let r = all;

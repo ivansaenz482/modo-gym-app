@@ -17,12 +17,13 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { StoreScreen } from '../screens/StoreScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { WorkoutScreen } from '../screens/WorkoutScreen';
+import { HealthScreen } from '../screens/HealthScreen';
 import { SideDrawer } from '../components/ui/SideDrawer';
 import { useUiStore } from '../store/uiStore';
 import { useSeasonStore } from '../store/seasonStore';
 import { useSeasonPalette } from '../theme/season';
 
-type Tab = 'home' | 'exercises' | 'routines' | 'diet' | 'ai' | 'membership' | 'store' | 'share' | 'profile' | 'progress' | 'workout';
+type Tab = 'home' | 'exercises' | 'routines' | 'diet' | 'ai' | 'membership' | 'store' | 'share' | 'profile' | 'progress' | 'workout' | 'health';
 
 export function AppNavigator() {
   const { profile, loadProfile } = useUserStore();
@@ -62,6 +63,7 @@ export function AppNavigator() {
     profile: <ProfileScreen onDone={() => setTab('home')} />,
     progress: <ProgressScreen />,
     workout: <WorkoutScreen />,
+    health: <HealthScreen />,
   };
 
   const tabs: { id: Tab; icon: any; label: string }[] = [
@@ -76,6 +78,7 @@ export function AppNavigator() {
     { id: 'home', icon: 'home', label: 'Inicio' },
     { id: 'workout', icon: 'flame', label: 'Entrenar' },
     { id: 'progress', icon: 'stats-chart', label: 'Mi Progreso' },
+    { id: 'health', icon: 'heart', label: 'Salud' },
     { id: 'membership', icon: 'card', label: 'Membresía & Pagos' },
     { id: 'store', icon: 'bag-handle', label: 'Tienda' },
     { id: 'share', icon: 'qr-code', label: 'Compartir' },
