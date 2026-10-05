@@ -1,5 +1,23 @@
 export type Goal = 'perder_peso' | 'ganar_musculo' | 'definir' | 'resistencia' | 'mantener';
 export type ActivityLevel = 'sedentario' | 'ligero' | 'moderado' | 'activo' | 'muy_activo';
+export type GymLevel = 'principiante' | 'intermedio' | 'pro';
+
+export const GYM_LEVELS: { id: GymLevel; label: string; emoji: string; desc: string }[] = [
+  { id: 'principiante', label: 'Principiante', emoji: '🌱', desc: 'Menos de 6 meses' },
+  { id: 'intermedio', label: 'Intermedio', emoji: '💪', desc: '6 meses a 2 años' },
+  { id: 'pro', label: 'Modo Pro', emoji: '🔥', desc: 'Más de 2 años' },
+];
+
+// Cantidad de ejercicios por día según el nivel
+export function exercisesPerDay(level: GymLevel): number {
+  if (level === 'pro') return 9;
+  if (level === 'intermedio') return 7;
+  return 5;
+}
+
+export function gymLevelLabel(level?: GymLevel): string {
+  return GYM_LEVELS.find((l) => l.id === level)?.label ?? 'Principiante';
+}
 
 export function calculateBMI(weight: number, heightCm: number) {
   const h = heightCm / 100;

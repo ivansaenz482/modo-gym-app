@@ -7,14 +7,17 @@ import { appFont, statFont } from '../theme/fonts';
 import { useUserStore } from '../store/userStore';
 import { useMembershipStore, calcExpiryAlert } from '../store/membershipStore';
 import { useProgressStore } from '../store/progressStore';
-import { calculateBMI, bmiCategory } from '../utils/calculations';
+import { calculateBMI, bmiCategory, gymLevelLabel } from '../utils/calculations';
 import { generateRoutineRecommendation } from '../services/aiService';
 import { MenuButton } from '../components/ui/MenuButton';
+import { useSeasonPalette } from '../theme/season';
+import { HalloweenOverlay } from '../components/ui/HalloweenOverlay';
 
 export function HomeScreen({ nav }: { nav: (s: string) => void }) {
   const { profile, setProfile } = useUserStore();
   const { memberships, load } = useMembershipStore();
   const { history, load: loadProgress, addEntry, getMessage } = useProgressStore();
+  const { isHalloween, palette } = useSeasonPalette();
   const [editMode, setEditMode] = useState(false);
   const [editWeight, setEditWeight] = useState('');
   const [editHeight, setEditHeight] = useState('');
@@ -22,16 +25,22 @@ export function HomeScreen({ nav }: { nav: (s: string) => void }) {
   useEffect(() => { load(); loadProgress(); }, []);
   if (!profile) return null;
   const bmi = calculateBMI(profile.weight, profile.height);
-  const rec = generateRoutineRecommendation(profile.daysPerWeek, profile.goal);
+  const rec = generateRoutineRecommendation(profile.daysPerWeek, profile.goal, profile.level ?? 'principiante');
   const alert = memberships[0] ? calcExpiryAlert(memberships[0].endDate) : null;
   const progressMsg = getMessage();
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
       {/* Header con logo y fondo impactante */}
-      <View style={[styles.hero, { overflow: 'hidden', padding: 0 }]}>
+      <View style={[styles.hero, { overflow: 'hidden', padding: 0 }, isHalloween && { borderWidth: 1, borderColor: palette.primary }]}>
         <Image source={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80' }} style={StyleSheet.absoluteFillObject} />
-        <LinearGradient colors={['rgba(225,6,0,0.72)', 'rgba(0,0,0,0.75)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 18 }}>
+        <LinearGradient colors={palette.heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 18 }}>
+          <HalloweenOverlay />
+          {isHalloween && (
+            <View style={styles.halloweenBadge}>
+              <Text style={styles.halloweenBadgeTxt}>🎃 MODO HALLOWEEN · MENTE + CORAZÓN + FUERZA 🦇</Text>
+            </View>
+          )}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <View style={styles.logoRow}>
@@ -45,7 +54,7 @@ export function HomeScreen({ nav }: { nav: (s: string) => void }) {
               <Text style={{ color: '#fff', fontSize: 26, fontWeight: '900', marginTop: 2, letterSpacing: 0.3, fontFamily: appFont.black }}>{profile.gymName}</Text>
               <View style={styles.objRow}>
                 <View style={styles.objDot} />
-                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12 }}>{profile.daysPerWeek} días/semana · Objetivo: {profile.goal.replace('_', ' ')}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12 }}>{profile.daysPerWeek} días/semana · Nivel: {gymLevelLabel(profile.level)} · {profile.goal.replace('_', ' ')}</Text>
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -142,7 +151,7 @@ export function HomeScreen({ nav }: { nav: (s: string) => void }) {
       <View style={styles.card}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={styles.cardTitle}>🧠 Tu Rutina Recomendada IA</Text>
-          <View style={styles.badge}><Text style={styles.badgeTxt}>{profile.daysPerWeek} DÍAS</Text></View>
+          <View style={styles.badge}><Text style={styles.badgeTxt}>{profile.daysPerWeek} DÍAS · {gymLevelLabel(profile.level).toUpperCase()}</Text></View>
         </View>
         <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 6 }}>{rec.focus}</Text>
         <View style={{ marginTop: 12, gap: 8 }}>
@@ -210,4 +219,6 @@ const styles = StyleSheet.create({
   quick: { flex: 1, backgroundColor: colors.surface, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   quickIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },  input: { backgroundColor: colors.surface2, borderRadius: 10, padding: 12, color: '#fff', borderWidth: 1, borderColor: colors.border },
   trainIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  halloweenBadge: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,122,24,0.22)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,122,24,0.6)' },
+  halloweenBadgeTxt: { color: '#FFB067', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
 });

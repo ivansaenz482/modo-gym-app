@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Alert } from 
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../theme/colors';
 import { useUserStore } from '../store/userStore';
-import { calculateBMI, bmiCategory, Goal } from '../utils/calculations';
+import { calculateBMI, bmiCategory, Goal, GymLevel, GYM_LEVELS } from '../utils/calculations';
 import { Logo } from '../components/ui/Logo';
 import { SelectField } from '../components/ui/SelectField';
 
@@ -15,6 +15,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
   const [weight, setWeight] = useState('75');
   const [goal, setGoal] = useState<Goal>('ganar_musculo');
   const [days, setDays] = useState(4);
+  const [level, setLevel] = useState<GymLevel>('principiante');
   const [gym, setGym] = useState('MODO-GYM Central');
   const { setProfile } = useUserStore();
 
@@ -23,7 +24,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
   const submit = async () => {
     if (!name || !height || !weight) return Alert.alert('Completa tus datos');
     await setProfile({
-      name, age: Number(age), sex, height: Number(height), weight: Number(weight), goal, daysPerWeek: days, gymName: gym, hasOnboarded: true,
+      name, age: Number(age), sex, height: Number(height), weight: Number(weight), goal, daysPerWeek: days, level, gymName: gym, hasOnboarded: true,
     });
     onDone();
   };
@@ -104,6 +105,18 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
             ))}
           </View>
 
+          <Text style={[styles.label, { marginTop: 16 }]}>TU NIVEL EN EL GYM</Text>
+          <View style={styles.levels}>
+            {GYM_LEVELS.map((l) => (
+              <Pressable key={l.id} onPress={() => setLevel(l.id)} style={[styles.level, level === l.id && styles.levelActive]}>
+                <Text style={{ fontSize: 22 }}>{l.emoji}</Text>
+                <Text style={[styles.levelTxt, level === l.id && { color: '#fff' }]}>{l.label}</Text>
+                <Text style={styles.levelDesc}>{l.desc}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.levelHint}>Según tu nivel te armo la rutina con {level === 'pro' ? 9 : level === 'intermedio' ? 7 : 5} ejercicios por día y ajusto el peso recomendado a tu peso corporal.</Text>
+
           <Text style={[styles.label, { marginTop: 16 }]}>GYM DONDE ENTRENAS</Text>
           <TextInput value={gym} onChangeText={setGym} placeholder="MODO-GYM" placeholderTextColor="#6B7280" style={styles.input} />
 
@@ -140,6 +153,12 @@ const styles = StyleSheet.create({
   day: { flex: 1, backgroundColor: colors.surface2, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   dayActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   dayTxt: { color: '#9CA3AF', fontWeight: '800', fontSize: 16 },
+  levels: { flexDirection: 'row', gap: 8 },
+  level: { flex: 1, backgroundColor: colors.surface2, borderRadius: 14, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  levelActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  levelTxt: { color: '#9CA3AF', fontWeight: '800', fontSize: 12, marginTop: 6, textAlign: 'center' },
+  levelDesc: { color: '#6B7280', fontSize: 9, marginTop: 2, textAlign: 'center' },
+  levelHint: { color: '#6B7280', fontSize: 10, marginTop: 8, lineHeight: 14 },
   cta: { marginTop: 20, borderRadius: 14, overflow: 'hidden' },
   ctaGrad: { padding: 16, alignItems: 'center' },
   ctaTxt: { color: '#fff', fontWeight: '900', letterSpacing: 0.5 },

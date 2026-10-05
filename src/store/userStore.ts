@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Goal } from '../utils/calculations';
+import { Goal, GymLevel } from '../utils/calculations';
 
 export type UserProfile = {
   name: string;
@@ -10,6 +10,7 @@ export type UserProfile = {
   weight: number; // kg
   goal: Goal;
   daysPerWeek: number; // 2-6
+  level: GymLevel; // nivel en el gym
   gymName?: string;
   hasOnboarded: boolean;
 };

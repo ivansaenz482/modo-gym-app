@@ -82,6 +82,43 @@ export async function requestPermissions() {
   return status === 'granted';
 }
 
+// Programa un aviso para cuando termine el temporizador (descanso o cardio).
+// Sirve aunque el usuario salga de la app, porque lo maneja el sistema operativo.
+export async function scheduleTimerDoneNotification(seconds: number, title: string, body: string): Promise<string | null> {
+  try {
+    await ensureChannels();
+    const hasPerm = await requestPermissions();
+    if (!hasPerm) return null;
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: 'default',
+        color: '#0EA5E9',
+        categoryIdentifier: 'entrenamiento',
+        data: { type: 'timer' },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, Math.round(seconds)),
+        repeats: false,
+        channelId: CHANNEL_ENTRENO,
+      } as any,
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function cancelTimerDoneNotification(id?: string | null) {
+  if (!id) return;
+  try {
+    await Notifications.cancelScheduledNotificationAsync(id);
+  } catch {
+    // sin permiso o id inválido: se ignora
+  }
+}
+
 export async function scheduleMembershipAlerts(m: Membership, daysPerWeek?: number) {
   await ensureChannels();
   const hasPerm = await requestPermissions();

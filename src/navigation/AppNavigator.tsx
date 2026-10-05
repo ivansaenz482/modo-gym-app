@@ -19,6 +19,8 @@ import { ProgressScreen } from '../screens/ProgressScreen';
 import { WorkoutScreen } from '../screens/WorkoutScreen';
 import { SideDrawer } from '../components/ui/SideDrawer';
 import { useUiStore } from '../store/uiStore';
+import { useSeasonStore } from '../store/seasonStore';
+import { useSeasonPalette } from '../theme/season';
 
 type Tab = 'home' | 'exercises' | 'routines' | 'diet' | 'ai' | 'membership' | 'store' | 'share' | 'profile' | 'progress' | 'workout';
 
@@ -28,9 +30,12 @@ export function AppNavigator() {
   const [ready, setReady] = useState(false);
   const drawerOpen = useUiStore((s) => s.drawerOpen);
   const closeDrawer = useUiStore((s) => s.closeDrawer);
+  const loadSeason = useSeasonStore((s) => s.load);
+  const { palette } = useSeasonPalette();
 
   useEffect(() => {
     loadProfile().then(() => setReady(true));
+    loadSeason();
   }, []);
 
   useEffect(() => {
@@ -78,18 +83,18 @@ export function AppNavigator() {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
       <View style={{ flex: 1 }}>{screens[tab]}</View>
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, { backgroundColor: palette.tabBar, borderColor: palette.border }]}>
         {tabs.map((t) => {
           const active = tab === t.id;
           return (
             <Pressable key={t.id} onPress={() => setTab(t.id)} style={({ pressed }) => [styles.tab, pressed && { opacity: 0.8 }]}>
-              <View style={[styles.iconWrap, active && styles.iconActive]}>
+              <View style={[styles.iconWrap, active && { backgroundColor: palette.primary }]}>
                 <Ionicons name={t.icon} size={20} color={active ? '#fff' : '#6B7280'} />
-                {active && <View style={styles.indicator} />}
+                {active && <View style={[styles.indicator, { backgroundColor: palette.primary }]} />}
               </View>
-              <Text style={[styles.tabLbl, active && { color: colors.primary }]} numberOfLines={1}>{t.label}</Text>
+              <Text style={[styles.tabLbl, active && { color: palette.primary }]} numberOfLines={1}>{t.label}</Text>
             </Pressable>
           );
         })}

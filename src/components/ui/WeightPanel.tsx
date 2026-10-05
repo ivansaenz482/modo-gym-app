@@ -7,13 +7,14 @@ import { Exercise } from '../../services/exerciseService';
 import { useWeightStore } from '../../store/weightStore';
 import { useUserStore } from '../../store/userStore';
 import { classifyWeightCategory, recomendarPesoInicial, sugerirProgresion, categoriaLabel } from '../../services/weightService';
+import { gymLevelLabel } from '../../utils/calculations';
 
 export function WeightPanel({ exercise }: { exercise: Exercise }) {
   const { profile } = useUserStore();
   const { lastWeightFor, logWeight } = useWeightStore();
   const last = lastWeightFor(exercise.id);
   const pesoCorporal = profile?.weight ?? 0;
-  const nivel: 'principiante' | 'intermedio' = 'principiante';
+  const nivel = profile?.level ?? 'principiante';
   const cat = classifyWeightCategory(exercise);
   const pesoInicial = recomendarPesoInicial(exercise, pesoCorporal, nivel);
   const [peso, setPeso] = useState(last ? String(last.weight) : String(pesoInicial));
@@ -49,7 +50,7 @@ export function WeightPanel({ exercise }: { exercise: Exercise }) {
           <Text style={styles.hint}>
             {last
               ? `Última vez: ${last.weight} kg · ${last.reps} reps · ${last.sets} series`
-              : `Peso ideal para empezar: ${pesoInicial} kg`}
+              : `Peso ideal para empezar (nivel ${gymLevelLabel(nivel)}): ${pesoInicial} kg`}
           </Text>
 
           <View style={styles.row}>

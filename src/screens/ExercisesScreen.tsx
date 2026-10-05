@@ -9,6 +9,7 @@ import { useLocaleStore } from '../store/localeStore';
 import { translateInstructions, translateDifficulty, translateEquipment } from '../services/translationService';
 import { MenuButton } from '../components/ui/MenuButton';
 import { RestTimer } from '../components/ui/RestTimer';
+import { RegisterExerciseModal } from '../components/ui/RegisterExerciseModal';
 
 function VideoPreview({ uri, thumb }: { uri?: string; thumb?: string }) {
   const isGif = uri?.endsWith('.gif');
@@ -49,6 +50,7 @@ export function ExercisesScreen() {
   const [selected, setSelected] = useState<Exercise | null>(null);
   const [selectedMuscle, setSelectedMuscle] = useState('todos');
   const [pendingEx, setPendingEx] = useState<Exercise | null>(null);
+  const [registerEx, setRegisterEx] = useState<Exercise | null>(null);
   const { favorites, toggleFav, addExerciseToDay } = useRoutineStore();
   const { locale, setLocale, country, setCountry, load } = useLocaleStore();
   const { profile } = require('../store/userStore').useUserStore();
@@ -170,6 +172,12 @@ export function ExercisesScreen() {
                   <Pressable onPress={() => toggleRoutine(selected)} style={[styles.cta, { flex: 1, backgroundColor: colors.primary }]}><Text style={styles.ctaTxt}>+ AGREGAR A DÍA</Text></Pressable>
                   <Pressable onPress={() => toggleFav(selected.id)} style={[styles.cta, { backgroundColor: colors.surface2 }]}><Ionicons name={favorites.includes(selected.id) ? 'heart' : 'heart-outline'} size={18} color={favorites.includes(selected.id) ? colors.primary : '#fff'} /></Pressable>
                 </View>
+                <Pressable onPress={() => setRegisterEx(selected)} style={[styles.cta, { backgroundColor: colors.success, marginTop: 12 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="checkmark-done" size={16} color="#fff" />
+                    <Text style={styles.ctaTxt}>REGISTRAR EJERCICIO · SUMAR CALORÍAS</Text>
+                  </View>
+                </Pressable>
               </View>
             </ScrollView>
           </View>
@@ -193,6 +201,8 @@ export function ExercisesScreen() {
           </View>
         </View>
       </Modal>
+
+      <RegisterExerciseModal exercise={registerEx} visible={!!registerEx} onClose={() => setRegisterEx(null)} />
     </View>
   );
 }

@@ -1,6 +1,9 @@
 // IA 100% GRATIS - offline rule-based + opcional HuggingFace gratuito
 // No requiere API key. Si el usuario quiere potenciar, puede usar HuggingFace free inference.
 
+import type { Exercise } from './exerciseService';
+import { GymLevel, exercisesPerDay } from '../utils/calculations';
+
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
 const KNOWLEDGE: Record<string, string> = {
@@ -30,25 +33,40 @@ export async function createWeeklyRoutineFromAI(profile: any, prompt: string): P
     const all = await fetchExercises();
     const days = profile?.daysPerWeek ?? 4;
     const goal = profile?.goal ?? 'mantener';
-    const rec = generateRoutineRecommendation(days, goal);
-    // Selecciona 2-3 ejercicios por día según el músculo del día
+    const level: GymLevel = profile?.level ?? 'principiante';
+    const rec = generateRoutineRecommendation(days, goal, level);
     const store = useRoutineStore.getState();
     for (let i = 0; i < rec.split.length; i++) {
       const dayNum = i + 1;
-      const sectionHint = rec.split[i].toLowerCase();
-      let picks: any[] = [];
-      if (sectionHint.includes('pecho') || sectionHint.includes('push')) picks = all.filter(e => e.section === 'pecho').slice(0, 2).concat(all.filter(e => e.section === 'hombros').slice(0, 1));
-      else if (sectionHint.includes('espalda') || sectionHint.includes('pull')) picks = all.filter(e => e.section === 'espalda').slice(0, 2).concat(all.filter(e => e.section === 'bíceps').slice(0, 1));
-      else if (sectionHint.includes('pierna') || sectionHint.includes('legs') || sectionHint.includes('lower')) picks = all.filter(e => e.section === 'piernas').slice(0, 2).concat(all.filter(e => e.section === 'glúteos').slice(0, 1));
-      else if (sectionHint.includes('torso') || sectionHint.includes('upper')) picks = all.filter(e => ['pecho','espalda','hombros'].includes(e.section)).slice(0, 3);
-      else picks = all.filter(e => e.section === 'full body').slice(0, 2);
-      if (picks.length === 0) picks = all.slice(i * 3, i * 3 + 3);
-      for (const ex of picks.slice(0, 3)) await store.addExerciseToDay(ex, dayNum);
+      const picks = pickExercisesForSplit(rec.split[i], all, rec.exercisesPerDay, i);
+      for (const ex of picks) await store.addExerciseToDay(ex, dayNum);
     }
-    return { success: true, message: `¡Rutina de ${days} días creada! Cada día con 2-3 ejercicios con vídeo. Ve a Rutinas para verla y ajustarla. ¿Quieres que también te genere la dieta?` };
+    return { success: true, message: `¡Rutina de ${days} días creada para nivel ${level}! Cada día con ${rec.exercisesPerDay} ejercicios con vídeo. Ve a Rutinas para verla y ajustarla. ¿Quieres que también te genere la dieta?` };
   } catch (e) {
     return { success: false, message: 'No pude crear la rutina automáticamente. Ve a Ejercicios y usa "+ RUTINA" eligiendo el día.' };
   }
+}
+
+// Elige ejercicios según el tipo de día (Push/Pull/Legs/Torso...) y el nivel del usuario.
+export function pickExercisesForSplit(split: string, all: Exercise[], count: number, seed = 0): Exercise[] {
+  const hint = split.toLowerCase();
+  let pool: Exercise[] = [];
+  const gym = all.filter((e) => e.category === 'gym');
+  if (hint.includes('pecho') || hint.includes('push')) pool = gym.filter((e) => ['pecho', 'hombros', 'tríceps'].includes(e.section));
+  else if (hint.includes('espalda') || hint.includes('pull')) pool = gym.filter((e) => ['espalda', 'bíceps'].includes(e.section));
+  else if (hint.includes('pierna') || hint.includes('legs') || hint.includes('lower')) pool = gym.filter((e) => ['piernas', 'glúteos'].includes(e.section));
+  else if (hint.includes('torso') || hint.includes('upper')) pool = gym.filter((e) => ['pecho', 'espalda', 'hombros'].includes(e.section));
+  else if (hint.includes('full')) pool = gym.filter((e) => ['pecho', 'espalda', 'piernas', 'hombros', 'abdomen'].includes(e.section));
+  else pool = gym.filter((e) => e.section === 'full body');
+  if (pool.length < count) pool = pool.concat(gym);
+  const seen = new Set<string>();
+  const out: Exercise[] = [];
+  const start = pool.length > 0 ? (seed * count) % pool.length : 0;
+  for (let k = 0; k < pool.length && out.length < count; k++) {
+    const ex = pool[(start + k) % pool.length];
+    if (!seen.has(ex.id)) { seen.add(ex.id); out.push(ex); }
+  }
+  return out;
 }
 
 export async function createWeeklyDietFromAI(profile: any): Promise<string> {
@@ -140,7 +158,7 @@ export async function askAI(messages: ChatMessage[], goal?: string, profile?: an
   }
 }
 
-export function generateRoutineRecommendation(days: number, goal: string) {
+export function generateRoutineRecommendation(days: number, goal: string, level: GymLevel = 'principiante') {
   const warmup = ['3 min cinta/bici suave', 'Movilidad hombros + cadera 3 min', '2 series aproximación 50% carga', 'Activación core 1 min'];
   let split: string[] = [];
   if (days <= 2) split = ['Full Body A', 'Full Body B'];
@@ -154,5 +172,5 @@ export function generateRoutineRecommendation(days: number, goal: string) {
   if (goal === 'ganar_musculo') focus = 'Hipertrofia 8-12 reps, descanso 90s, progresión semanal';
   if (goal === 'definir') focus = 'Mantén cargas, reps 10-15, déficit suave';
   if (goal === 'resistencia') focus = 'Circuitos, descansos cortos 45s, WODs CrossFit 2x semana';
-  return { split, warmup, focus };
+  return { split, warmup, focus, exercisesPerDay: exercisesPerDay(level) };
 }

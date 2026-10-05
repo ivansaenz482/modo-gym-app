@@ -14,7 +14,9 @@ import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { WeightPanel } from '../components/ui/WeightPanel';
 import { useWeightStore } from '../store/weightStore';
 import { classifyWeightCategory, recomendarPesoInicial, sugerirProgresion, mensajePeso, categoriaLabel } from '../services/weightService';
+import { gymLevelLabel } from '../utils/calculations';
 import { RestTimer } from '../components/ui/RestTimer';
+import { RegisterExerciseModal } from '../components/ui/RegisterExerciseModal';
 import { useProgressStore } from '../store/progressStore';
 
 function RoutineVideo({ ex }: { ex: Exercise }) {
@@ -33,6 +35,7 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
   const { weights, lastWeightFor, logWeight } = useWeightStore();
   const logBodyParts = useProgressStore((s) => s.logBodyParts);
   const [selectedEx, setSelectedEx] = useState<Exercise | null>(null);
+  const [registerEx, setRegisterEx] = useState<Exercise | null>(null);
   useEffect(() => { load(); useWeightStore.getState().load(); }, []);
 
   const registrarSesion = async (r: { dayNumber: number; exercises: Exercise[] }) => {
@@ -41,20 +44,23 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
     await logBodyParts(parts);
     alert(`✓ Sesión del Día ${r.dayNumber} registrada. El progreso de tus músculos se actualizó en Mi Progreso.`);
   };
-  const rec = profile ? generateRoutineRecommendation(profile.daysPerWeek, profile.goal) : null;
+  const rec = profile ? generateRoutineRecommendation(profile.daysPerWeek, profile.goal, profile.level ?? 'principiante') : null;
 
   const applyIARoutine = async () => {
     if (!rec || !profile) return;
-    // Crea un día vacío por cada día recomendado, si no existe
     const { addRoutine } = useRoutineStore.getState();
+    const { fetchExercises } = await import('../services/exerciseService');
+    const { pickExercisesForSplit } = await import('../services/aiService');
+    const all = await fetchExercises();
     for (let i = 0; i < rec.split.length; i++) {
       const dayNum = i + 1;
       const exists = routines.find((r) => r.dayNumber === dayNum);
       if (!exists) {
-        await addRoutine({ id: `ia-day-${dayNum}-${Date.now()}`, name: `Día ${dayNum} - ${rec.split[i]}`, dayNumber: dayNum, exercises: [], warmup: rec.warmup, date: new Date().toISOString() });
+        const picks = pickExercisesForSplit(rec.split[i], all, rec.exercisesPerDay, i);
+        await addRoutine({ id: `ia-day-${dayNum}-${Date.now()}`, name: `Día ${dayNum} - ${rec.split[i]}`, dayNumber: dayNum, exercises: picks, warmup: rec.warmup, date: new Date().toISOString() });
       }
     }
-    alert(`✓ Rutina IA creada por días (${rec.split.length} días). Ahora añade 1-3 ejercicios a cada día desde Ejercicios.`);
+    alert(`✓ Rutina creada: ${rec.split.length} días · ${rec.exercisesPerDay} ejercicios por día (nivel ${gymLevelLabel(profile.level)}). Ve a Rutinas para verla.`);
   };
 
   return (
@@ -63,7 +69,7 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
 
       {rec && (
         <View style={styles.card}>
-          <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 12 }}>RECOMENDACIÓN IA · {profile?.daysPerWeek} DÍAS</Text>
+          <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 12 }}>RECOMENDACIÓN IA · {profile?.daysPerWeek} DÍAS · NIVEL {gymLevelLabel(profile?.level).toUpperCase()}</Text>
           {rec.split.map((s, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: 8, alignItems: 'center' }}>
               <View style={styles.num}><Text style={{ color: '#fff', fontWeight: '900' }}>{i + 1}</Text></View>
@@ -74,7 +80,7 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
             <PrimaryButton label="APLICAR POR DÍAS" onPress={applyIARoutine} variant="success" />
             <PrimaryButton label="+ AÑADIR" onPress={() => nav('exercises')} />
           </View>
-          <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 6, textAlign: 'center' }}>Crea Día 1, Día 2... y luego asigna 1-3 ejercicios a cada día. La IA ya te da la división por días.</Text>
+          <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 6, textAlign: 'center' }}>Toca APLICAR POR DÍAS y la IA te crea cada día con {rec.exercisesPerDay} ejercicios según tu nivel ({gymLevelLabel(profile?.level)}). Luego puedes agregar o quitar los que quieras.</Text>
         </View>
       )}
 
@@ -144,6 +150,10 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
                 <Text style={{ color: colors.primary, fontWeight: '700', marginTop: 4 }}>{locale === 'es' ? 'Objetivo' : 'Target'}: {(selectedEx as any).targetEs || selectedEx.target} · {locale === 'es' ? 'Secundarios' : 'Secondary'}: {selectedEx.secondaryMuscles?.join(', ')}</Text>
                 <WeightPanel exercise={selectedEx} />
                 <RestTimer exercise={selectedEx} />
+                <Pressable onPress={() => setRegisterEx(selectedEx)} style={styles.registerBtn}>
+                  <Ionicons name="checkmark-done" size={16} color="#fff" />
+                  <Text style={styles.registerTxt}>REGISTRAR ESTE EJERCICIO · SUMAR CALORÍAS</Text>
+                </Pressable>
                 {selectedEx.instructions?.length > 0 && (
                   <>
                     <Text style={{ color: '#fff', fontWeight: '800', marginTop: 16 }}>{locale === 'es' ? 'Cómo se realiza:' : 'How to perform:'}</Text>
@@ -157,6 +167,8 @@ export function RoutinesScreen({ nav }: { nav: (s: string) => void }) {
           </View>
         )}
       </Modal>
+
+      <RegisterExerciseModal exercise={registerEx} visible={!!registerEx} onClose={() => setRegisterEx(null)} />
     </ScrollView>
   );
 }
@@ -172,6 +184,8 @@ const styles = StyleSheet.create({
   weightTxt: { color: '#fff', fontSize: 11, fontWeight: '800' },
   sessionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.success, borderRadius: 11, padding: 11, marginTop: 12 },
   sessionTxt: { color: '#fff', fontWeight: '900', fontSize: 11 },
+  registerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.primary, borderRadius: 11, padding: 12, marginTop: 12 },
+  registerTxt: { color: '#fff', fontWeight: '900', fontSize: 11 },
   close: { position: 'absolute', top: 40, right: 16, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   tag: { backgroundColor: colors.surface2, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   tagTxt: { color: '#9CA3AF', fontSize: 11, fontWeight: '700' },

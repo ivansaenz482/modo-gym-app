@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { GlobalTimer } from '../components/ui/GlobalTimer';
-import { RestTimer } from '../components/ui/RestTimer';
+import { RestTimer, RestTimerHandle } from '../components/ui/RestTimer';
 import { Exercise } from '../services/exerciseService';
 import { useProgressStore } from '../store/progressStore';
 import { randomPraise } from '../utils/celebration';
@@ -42,9 +42,11 @@ export function WorkoutScreen() {
   const logBodyParts = useProgressStore((s) => s.logBodyParts);
   const [active, setActive] = useState<Exercise | null>(null);
   const [praise, setPraise] = useState<string | null>(null);
+  const timerRef = useRef<RestTimerHandle>(null);
 
   const finishCardio = async () => {
     if (!active) return;
+    timerRef.current?.commit();
     await logBodyParts(['cardio']);
     setPraise(randomPraise());
     setTimeout(() => setPraise(null), 4000);
@@ -87,7 +89,7 @@ export function WorkoutScreen() {
                 <Text style={{ color: '#fff', fontWeight: '900', fontSize: 20 }}>{active.name}</Text>
                 <Pressable onPress={() => setActive(null)} style={styles.close}><Ionicons name="close" size={20} color="#fff" /></Pressable>
               </View>
-              <RestTimer exercise={active} onFinish={finishCardio} />
+              <RestTimer ref={timerRef} exercise={active} onFinish={finishCardio} />
               <Pressable onPress={finishCardio} style={styles.doneBtn}>
                 <Ionicons name="checkmark-done" size={16} color="#fff" />
                 <Text style={styles.doneTxt}>TERMINÉ · REGISTRAR PROGRESO</Text>

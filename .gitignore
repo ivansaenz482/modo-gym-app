@@ -33,6 +33,17 @@ yarn-error.*
 # local env files
 .env*.local
 
+# EAS local credentials (NO subir)
+credentials/
+credentials.json
+
+# binarios grandes (no subir a Git)
+apk-para-drive/
+*.aab
+*.apk
+build.log
+modo-gym-release.aab
+
 # typescript
 *.tsbuildinfo
 

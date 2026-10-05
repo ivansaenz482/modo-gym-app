@@ -1,5 +1,5 @@
 import { Exercise } from './exerciseService';
-import { Goal } from '../utils/calculations';
+import { Goal, GymLevel } from '../utils/calculations';
 
 // Categorías de ejercicios por tipo de carga
 export type WeightCategory = 'compuesto' | 'aislamiento' | 'peso_corporal';
@@ -15,15 +15,21 @@ export function classifyWeightCategory(ex: Exercise): WeightCategory {
   return 'aislamiento';
 }
 
-// Peso recomendado para empezar, según dificultad y tipo; relativo al peso corporal
-export function recomendarPesoInicial(ex: Exercise, pesoCorporalKg?: number, nivel: 'principiante' | 'intermedio' = 'principiante'): number {
+// Peso recomendado para empezar, según dificultad y tipo; relativo al peso corporal y al nivel
+export function recomendarPesoInicial(ex: Exercise, pesoCorporalKg?: number, nivel: GymLevel = 'principiante'): number {
   const cat = classifyWeightCategory(ex);
   if (cat === 'peso_corporal') {
     // Ejercicios con peso corporal: no requieren carga externa para empezar
     return 0;
   }
   const base = pesoCorporalKg && pesoCorporalKg > 20 ? pesoCorporalKg : 70;
-  let pct = cat === 'compuesto' ? (nivel === 'principiante' ? 0.35 : 0.50) : (nivel === 'principiante' ? 0.15 : 0.25);
+  const pctMap: Record<GymLevel, [number, number]> = {
+    principiante: [0.35, 0.15],
+    intermedio: [0.50, 0.25],
+    pro: [0.65, 0.35],
+  };
+  const [compPct, isoPct] = pctMap[nivel] ?? pctMap.principiante;
+  const pct = cat === 'compuesto' ? compPct : isoPct;
   let peso = Math.round((base * pct) / 2.5) * 2.5; // redondea a placas de 2.5
   if (peso < 5) peso = 5;
   return peso;

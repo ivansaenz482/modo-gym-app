@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Alert } from 'react-native';
 import { colors } from '../theme/colors';
 import { useUserStore } from '../store/userStore';
-import { Goal } from '../utils/calculations';
+import { Goal, GymLevel, GYM_LEVELS } from '../utils/calculations';
 import { SelectField } from '../components/ui/SelectField';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
 
@@ -15,19 +15,20 @@ export function ProfileScreen({ onDone }: { onDone?: () => void }) {
   const [weight, setWeight] = useState(String(profile?.weight ?? 75));
   const [goal, setGoal] = useState<Goal>(profile?.goal ?? 'mantener');
   const [days, setDays] = useState(String(profile?.daysPerWeek ?? 4));
+  const [level, setLevel] = useState<GymLevel>(profile?.level ?? 'principiante');
   const [gym, setGym] = useState(profile?.gymName ?? 'MODO-GYM Central');
 
   useEffect(() => {
     if (profile) {
       setName(profile.name); setAge(String(profile.age)); setSex(profile.sex);
       setHeight(String(profile.height)); setWeight(String(profile.weight));
-      setGoal(profile.goal); setDays(String(profile.daysPerWeek)); setGym(profile.gymName || '');
+      setGoal(profile.goal); setDays(String(profile.daysPerWeek)); setLevel(profile.level ?? 'principiante'); setGym(profile.gymName || '');
     }
   }, [profile]);
 
   const save = async () => {
     if (!name || !height || !weight) return Alert.alert('Completa nombre, altura y peso');
-    await setProfile({ name, age: Number(age) || 25, sex, height: Number(height), weight: Number(weight), goal, daysPerWeek: Number(days) || 4, gymName: gym, hasOnboarded: true });
+    await setProfile({ name, age: Number(age) || 25, sex, height: Number(height), weight: Number(weight), goal, daysPerWeek: Number(days) || 4, level, gymName: gym, hasOnboarded: true });
     Alert.alert('✓ Datos actualizados', 'Tu perfil se ha guardado. La IA y dieta usarán los nuevos datos.');
     onDone?.();
   };
@@ -58,6 +59,14 @@ export function ProfileScreen({ onDone }: { onDone?: () => void }) {
         </View>
         <Text style={[styles.label, {marginTop: 12}]}>DÍAS/SEMANA</Text>
         <View style={{ flexDirection: 'row', gap: 6 }}>{[2,3,4,5,6].map(d=> <Pressable key={d} onPress={()=>setDays(String(d))} style={[styles.day, days===String(d) && styles.dayActive]}><Text style={[styles.dayTxt, days===String(d) && {color:'#fff'}]}>{d}</Text></Pressable>)}</View>
+        <Text style={[styles.label, {marginTop: 12}]}>NIVEL EN EL GYM</Text>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {GYM_LEVELS.map(l => (
+            <Pressable key={l.id} onPress={()=>setLevel(l.id)} style={[styles.chip, level===l.id && styles.chipActive]}>
+              <Text style={[styles.chipTxt, level===l.id && {color:'#fff'}]}>{l.emoji} {l.label}</Text>
+            </Pressable>
+          ))}
+        </View>
         <Text style={[styles.label, {marginTop: 12}]}>GYM</Text>
         <TextInput value={gym} onChangeText={setGym} style={styles.input} />
         <Pressable onPress={save} style={styles.save}><Text style={styles.saveTxt}>GUARDAR CAMBIOS</Text></Pressable>
