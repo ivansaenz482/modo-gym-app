@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SplashScreen } from './src/screens/SplashScreen';
 import { useAppFonts } from './src/theme/fonts';
 import { useSeasonStore } from './src/store/seasonStore';
+import { InstallPWA } from './src/components/ui/InstallPWA';
 
 export default function App() {
   const fontsLoaded = useAppFonts();
@@ -21,6 +22,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <AppNavigator />
+      <InstallPWA />
     </SafeAreaProvider>
   );
 }

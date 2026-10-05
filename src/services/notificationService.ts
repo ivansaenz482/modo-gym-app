@@ -2,9 +2,16 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Membership } from '../store/membershipStore';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowAlert: true, shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true }),
-});
+// En web/iOS-PWA las notificaciones no usan el handler nativo: se evita romper el arranque.
+if (Platform.OS !== 'web') {
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({ shouldShowAlert: true, shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true }),
+    });
+  } catch {
+    // sin soporte de notificaciones: se ignora
+  }
+}
 
 const CHANNEL_MEMBRESIA = 'membresia';
 const CHANNEL_ENTRENO = 'entrenamiento';
