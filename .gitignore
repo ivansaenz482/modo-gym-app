@@ -50,3 +50,5 @@ modo-gym-release.aab
 # generated native folders
 /ios
 /android
+
+.vercel

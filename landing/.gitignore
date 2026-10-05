@@ -14,3 +14,6 @@ build/
 .vercel
 next-env.d.ts
 *.tsbuildinfo
+
+.vercel
+.env*

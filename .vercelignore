@@ -1,0 +1,14 @@
+node_modules
+.expo
+dist
+android
+ios
+.git
+apk-para-drive
+*.aab
+*.apk
+credentials
+credentials.json
+build.log
+landing
+privacy-site
